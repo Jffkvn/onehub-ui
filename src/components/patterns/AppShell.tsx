@@ -1,58 +1,107 @@
 import React, { useState } from 'react'
-import { Sidebar, type NavGroup } from './Sidebar'
+import { Sidebar, type NavGroup, type NavItem as SidebarNavItem } from './Sidebar'
 import { Topbar } from './Topbar'
 import { SlideOver } from '@/components/ui/SlideOver'
+import { getPermittedNav } from '@/config/navigation'
+import { useAuth } from '@/modules/auth/AuthProvider'
+import { MOCK_ROLE_PERMISSIONS } from './DevRoleSwitcher'
 import { cn } from '@/lib/utils'
 
 export interface AppShellProps {
-  groups: NavGroup[]
-  activePath: string
+  groups?: NavGroup[]
+  activePath?: string
   onNavigate?: (path: string) => void
-  children: React.ReactNode
   orgName?: string
   orgSubtitle?: string
   userName?: string
   userRole?: string
   userAvatar?: string
+  children: React.ReactNode
   unreadNotifications?: number
   topbarActionSlot?: React.ReactNode
   className?: string
 }
 
 export function AppShell({
-  groups,
-  activePath,
+  groups: suppliedGroups,
+  activePath: suppliedActivePath,
   onNavigate,
+  orgName: suppliedOrgName,
+  orgSubtitle: suppliedOrgSubtitle,
+  userName: suppliedUserName,
+  userRole: suppliedUserRole,
+  userAvatar: suppliedUserAvatar,
   children,
-  orgName,
-  orgSubtitle,
-  userName,
-  userRole,
-  userAvatar,
   unreadNotifications,
   topbarActionSlot,
   className,
 }: AppShellProps) {
+  const auth = useAuth()
+  const access = auth.access
+  const session = auth.session
+  const devPreviewRole = auth.devPreviewRole
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const handleNav = (path: string) => {
-    onNavigate?.(path)
+  // Use dev preview role permissions if selected in DEV mode, otherwise live session permissions
+  const activePermissions =
+    import.meta.env.DEV && devPreviewRole
+      ? MOCK_ROLE_PERMISSIONS[devPreviewRole]
+      : access?.permissionKeys ?? []
+
+  const activeRoleName =
+    suppliedUserRole ||
+    (import.meta.env.DEV && devPreviewRole
+      ? devPreviewRole
+      : access?.roleKeys[0] ?? 'employee')
+
+  const userName =
+    suppliedUserName || access?.profile?.displayName || session?.email?.split('@')[0] || 'User'
+  const userAvatar = suppliedUserAvatar || access?.profile?.avatarPath
+  const orgName = suppliedOrgName || 'Egypro Uganda'
+  const orgSubtitle = suppliedOrgSubtitle || 'UGX · Kampala Headquarters'
+
+  // Filter navigation dynamically based on active permissions if groups not explicitly passed
+  const groupedSections = getPermittedNav(activePermissions)
+
+  const sidebarGroups: NavGroup[] =
+    suppliedGroups ||
+    groupedSections.map((sec) => ({
+      title: sec.section,
+      items: sec.items.map(
+        (item): SidebarNavItem => ({
+          id: item.key,
+          label: item.label,
+          path: item.path,
+          icon: <item.icon className="h-4 w-4" />,
+        }),
+      ),
+    }))
+
+  const activePath = suppliedActivePath || window.location.pathname
+
+  const handleNavigate = (path: string) => {
+    if (onNavigate) {
+      onNavigate(path)
+    } else {
+      window.location.href = path
+    }
     setMobileOpen(false)
   }
 
   return (
     <div className={cn('flex h-screen w-full overflow-hidden bg-canvas text-ink', className)}>
-      {/* Desktop Sidebar (visible lg and up) */}
+      {/* Desktop Sidebar (lg and up) */}
       <div className="hidden lg:block h-full">
         <Sidebar
-          groups={groups}
+          groups={sidebarGroups}
           activePath={activePath}
-          onNavigate={handleNav}
+          onNavigate={handleNavigate}
           orgName={orgName}
           orgSubtitle={orgSubtitle}
           userName={userName}
-          userRole={userRole}
+          userRole={activeRoleName}
           userAvatar={userAvatar}
+          onSignOut={() => void auth.signOut()}
         />
       </div>
 
@@ -64,31 +113,33 @@ export function AppShell({
         className="p-0 border-r-0"
       >
         <Sidebar
-          groups={groups}
+          groups={sidebarGroups}
           activePath={activePath}
-          onNavigate={handleNav}
+          onNavigate={handleNavigate}
           orgName={orgName}
           orgSubtitle={orgSubtitle}
           userName={userName}
-          userRole={userRole}
+          userRole={activeRoleName}
           userAvatar={userAvatar}
+          onSignOut={() => void auth.signOut()}
           className="w-full h-full border-r-0"
         />
       </SlideOver>
 
-      {/* Main Content Area */}
+      {/* Main Canvas Region */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar
           onToggleMobileSidebar={() => setMobileOpen(true)}
           userName={userName}
           userAvatar={userAvatar}
+          onSignOut={() => void auth.signOut()}
           unreadNotifications={unreadNotifications}
           actionSlot={topbarActionSlot}
         />
 
-        {/* Scrollable Canvas */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="mx-auto max-w-7xl space-y-8">{children}</div>
+        {/* Scrollable Content Region */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+          <div className="mx-auto max-w-7xl space-y-6">{children}</div>
         </main>
       </div>
     </div>

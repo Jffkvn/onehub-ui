@@ -4,7 +4,18 @@ import { Avatar } from '@/components/ui/Wrappers'
 import { Badge } from '@/components/ui/StatusPill'
 import { cn } from '@/lib/utils'
 
-export type BadgeTone = 'emerald' | 'amber' | 'violet' | 'blue' | 'rose' | 'cyan' | 'neutral' | 'success' | 'warning' | 'danger' | 'info'
+export type BadgeTone =
+  | 'emerald'
+  | 'amber'
+  | 'violet'
+  | 'blue'
+  | 'rose'
+  | 'cyan'
+  | 'neutral'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info'
 
 const toneMap: Record<BadgeTone, 'success' | 'warning' | 'danger' | 'info' | 'violet' | 'neutral'> = {
   emerald: 'success',
@@ -43,6 +54,7 @@ export interface SidebarProps {
   userName?: string
   userRole?: string
   userAvatar?: string
+  onSignOut?: () => void
   className?: string
 }
 
@@ -51,10 +63,11 @@ export function Sidebar({
   activePath,
   onNavigate,
   orgName = 'Egypro Uganda',
-  orgSubtitle = 'UGX · UG',
-  userName = 'Dora Agai',
-  userRole = 'HR Administrator',
+  orgSubtitle = 'UGX · Kampala Headquarters',
+  userName = 'User',
+  userRole = 'Employee',
   userAvatar,
+  onSignOut,
   className,
 }: SidebarProps) {
   return (
@@ -86,7 +99,9 @@ export function Sidebar({
             </p>
             <div className="space-y-0.5">
               {group.items.map((item) => {
-                const isActive = activePath === item.path
+                const isActive =
+                  activePath === item.path ||
+                  (item.path !== '/dashboard' && activePath.startsWith(item.path))
 
                 return (
                   <button
@@ -145,20 +160,23 @@ export function Sidebar({
       {/* User Block Footer */}
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center justify-between rounded-md p-2 hover:bg-white/5">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 overflow-hidden">
             <Avatar name={userName} src={userAvatar} size="sm" />
-            <div className="text-left">
-              <p className="font-body text-xs font-semibold text-white leading-tight">{userName}</p>
-              <p className="font-body text-[10px] text-white/50">{userRole}</p>
+            <div className="text-left overflow-hidden">
+              <p className="font-body text-xs font-semibold text-white leading-tight truncate">{userName}</p>
+              <p className="font-body text-[10px] text-white/50 truncate capitalize">{userRole.replace('_', ' ')}</p>
             </div>
           </div>
-          <button
-            type="button"
-            title="Log out"
-            className="text-white/40 hover:text-white p-1 rounded"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          {onSignOut && (
+            <button
+              type="button"
+              onClick={onSignOut}
+              title="Sign Out"
+              className="text-white/40 hover:text-rose p-1.5 rounded transition-colors shrink-0"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </aside>

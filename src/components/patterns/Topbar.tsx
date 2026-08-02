@@ -1,6 +1,8 @@
-import React from 'react'
-import { Search, Bell, Menu } from 'lucide-react'
+import React, { useState } from 'react'
+import { Search, Bell, Menu, LogOut, Sun, Moon } from 'lucide-react'
 import { Avatar } from '@/components/ui/Wrappers'
+import { DropdownMenu } from '@/components/ui/DropdownMenu'
+import { DevRoleSwitcher } from './DevRoleSwitcher'
 import { cn } from '@/lib/utils'
 
 export interface TopbarProps {
@@ -9,6 +11,7 @@ export interface TopbarProps {
   onNotificationClick?: () => void
   userName?: string
   userAvatar?: string
+  onSignOut?: () => void
   actionSlot?: React.ReactNode
   onToggleMobileSidebar?: () => void
   className?: string
@@ -16,27 +19,37 @@ export interface TopbarProps {
 
 export function Topbar({
   onSearchChange,
-  unreadNotifications = 3,
+  unreadNotifications = 0,
   onNotificationClick,
-  userName = 'Dora Agai',
+  userName = 'User',
   userAvatar,
+  onSignOut,
   actionSlot,
   onToggleMobileSidebar,
   className,
 }: TopbarProps) {
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains('dark'),
+  )
+
+  const toggleDarkMode = () => {
+    const isNowDark = document.documentElement.classList.toggle('dark')
+    setIsDark(isNowDark)
+  }
+
   return (
     <header
       className={cn(
-        'sticky top-0 z-topbar flex h-16 w-full items-center justify-between border-b border-line bg-surface/95 px-6 backdrop-blur-md',
+        'sticky top-0 z-topbar flex h-16 w-full items-center justify-between border-b border-line bg-surface/95 px-4 sm:px-6 backdrop-blur-md',
         className,
       )}
     >
       {/* Left Search & Mobile Menu Button */}
-      <div className="flex items-center gap-4 flex-1 max-w-md">
+      <div className="flex items-center gap-3 flex-1 max-w-md">
         <button
           type="button"
           onClick={onToggleMobileSidebar}
-          className="lg:hidden text-muted hover:text-ink p-1 rounded-md"
+          className="lg:hidden text-muted hover:text-ink p-1.5 rounded-md hover:bg-line/40"
         >
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle Sidebar</span>
@@ -54,8 +67,21 @@ export function Topbar({
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
+        {/* Dev-only Role Switcher */}
+        <DevRoleSwitcher />
+
         {actionSlot}
+
+        {/* Theme Toggle Button */}
+        <button
+          type="button"
+          onClick={toggleDarkMode}
+          className="rounded-md p-2 text-soft hover:bg-line/40 hover:text-ink focus:outline-none"
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {isDark ? <Sun className="h-4 w-4 text-amber" /> : <Moon className="h-4 w-4" />}
+        </button>
 
         {/* Notifications */}
         <button
@@ -64,23 +90,45 @@ export function Topbar({
           className="relative rounded-md p-2 text-soft hover:bg-line/40 hover:text-ink focus:outline-none"
           title="Notifications"
         >
-          <Bell className="h-5 w-5" />
+          <Bell className="h-4 w-4" />
           {unreadNotifications > 0 && (
-            <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose font-mono text-[10px] font-bold text-white">
+            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose font-mono text-[10px] font-bold text-white">
               {unreadNotifications}
             </span>
           )}
         </button>
 
-        <div className="h-5 w-[1px] bg-line" />
+        <div className="h-5 w-[1px] bg-line mx-1" />
 
-        {/* Avatar */}
-        <div className="flex items-center gap-2">
-          <Avatar name={userName} src={userAvatar} size="sm" />
-          <span className="hidden sm:inline-block font-body text-xs font-semibold text-ink">
-            {userName}
-          </span>
-        </div>
+        {/* User Dropdown Menu */}
+        <DropdownMenu
+          trigger={
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-md p-1 hover:bg-line/40 focus:outline-none"
+            >
+              <Avatar name={userName} src={userAvatar} size="sm" />
+              <span className="hidden md:inline-block font-body text-xs font-semibold text-ink">
+                {userName}
+              </span>
+            </button>
+          }
+          items={[
+            {
+              key: 'profile',
+              label: userName,
+              disabled: true,
+            },
+            {
+              key: 'signout',
+              label: 'Sign out',
+              icon: <LogOut className="h-4 w-4" />,
+              danger: true,
+              onClick: onSignOut,
+            },
+          ]}
+          align="end"
+        />
       </div>
     </header>
   )
