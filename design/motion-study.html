@@ -1,0 +1,305 @@
+<title>OneHub — Motion Study</title>
+<style>
+:root{
+ --side:#0e1626; --canvas:#f5f6f8; --surface:#fff; --surface2:#fafbfc; --line:#e7e9ee;
+ --ink:#0d1626; --soft:#3d4757; --muted:#7a8494; --faint:#a3abb8;
+ --em:#00c08b; --em-d:#059669; --em-t:#e3f9f1;
+ --vi:#8b5cf6; --vi-t:#f2ecfe; --bl:#3b82f6; --bl-t:#e9f1fe;
+ --am:#f59e0b; --am-t:#fef4e1; --ro:#f43f5e; --ro-t:#ffe9ed; --cy:#06b6d4; --cy-t:#e0f8fb;
+ --fd:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+ --exp:cubic-bezier(.16,1,.3,1); --micro:cubic-bezier(.4,0,.2,1); --sheet:cubic-bezier(.32,.72,0,1);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--fd);font-size:13.5px;background:#e9ebf0;color:var(--ink);-webkit-font-smoothing:antialiased}
+.tn{font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:1.2rem 1rem 3rem}
+.intro{margin-bottom:.9rem}
+.intro h1{font-size:1.35rem;margin:0 0 .2rem;letter-spacing:-.02em}
+.intro p{margin:0;color:#5b6577;font-size:.85rem;max-width:70ch}
+.ctrls{display:flex;flex-wrap:wrap;gap:.45rem;margin:.8rem 0}
+.cb{border:1px solid #cdd2da;background:#fff;border-radius:8px;padding:.42rem .75rem;font:inherit;font-size:.78rem;font-weight:650;color:var(--soft);cursor:pointer;transition:transform .12s var(--micro),box-shadow .18s var(--micro),background .18s}
+.cb:hover{background:#f7f8fa;box-shadow:0 2px 8px rgba(13,22,38,.08);transform:translateY(-1px)}
+.cb:active{transform:scale(.97)}
+.cb.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.note{font-size:.74rem;color:#6b7484;margin-left:.2rem;align-self:center}
+
+/* ---- app frame ---- */
+.app{display:flex;height:600px;border-radius:14px;overflow:hidden;background:var(--canvas);box-shadow:0 1px 3px rgba(13,22,38,.08),0 18px 50px rgba(13,22,38,.14);position:relative}
+.side{width:196px;flex-shrink:0;background:var(--side);color:#fff;display:flex;flex-direction:column;padding-top:.7rem;position:relative}
+.brand{display:flex;align-items:center;gap:.5rem;padding:.2rem .8rem .7rem}
+.brand .m{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--em),var(--em-d));display:grid;place-items:center;font-weight:800;color:#04231a;font-size:.78rem}
+.brand .n{font-weight:800;font-size:.79rem}
+.nav{padding:0 .5rem;position:relative;flex:1}
+/* sliding active indicator */
+#pill{position:absolute;left:.5rem;right:.5rem;height:29px;border-radius:7px;background:#132a24;transition:transform .42s var(--exp);pointer-events:none;z-index:0}
+#pill::before{content:"";position:absolute;left:-.5rem;top:6px;bottom:6px;width:2.5px;border-radius:0 3px 3px 0;background:var(--em)}
+.gl{font-size:.56rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#4e5b73;padding:.55rem .45rem .2rem}
+.ni{display:flex;align-items:center;gap:.5rem;height:29px;padding:0 .45rem;border-radius:7px;color:#aab4c5;font-size:.765rem;font-weight:500;cursor:pointer;position:relative;z-index:1;transition:color .22s var(--micro)}
+.ni .i{width:14px;text-align:center;font-size:.8rem;opacity:.7;transition:opacity .22s,color .22s}
+.ni .c{margin-left:auto;font-size:.6rem;font-weight:800;background:#1c273d;color:#8d99ad;border-radius:999px;padding:.02rem .32rem;transition:background .22s,color .22s}
+.ni:hover{color:#dfe5ee}
+.ni.on{color:#fff;font-weight:650}
+.ni.on .i{opacity:1;color:var(--em)}
+.ni.on .c{background:var(--em);color:#04231a}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+.top{height:44px;flex-shrink:0;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 .95rem;gap:.6rem}
+.srch{flex:1;max-width:230px;background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:.28rem .55rem;color:var(--faint);font-size:.73rem;transition:border-color .2s,box-shadow .2s}
+.srch:hover{border-color:#cdd3dc}
+.ib{width:27px;height:27px;border-radius:7px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--muted);font-size:.72rem;margin-left:auto;position:relative;cursor:pointer;transition:transform .15s var(--micro),background .18s}
+.ib:hover{background:var(--surface2);transform:translateY(-1px)}
+.ib .d{position:absolute;top:-3px;right:-3px;min-width:13px;height:13px;border-radius:99px;background:var(--ro);color:#fff;font-size:.52rem;font-weight:800;display:grid;place-items:center;border:2px solid #fff}
+.cont{flex:1;overflow-y:auto;padding:.95rem 1.05rem 1.5rem}
+.ph{margin-bottom:.75rem}
+.ph h2{font-size:1.08rem;margin:0;letter-spacing:-.015em}
+.ph p{margin:.1rem 0 0;color:var(--muted);font-size:.75rem}
+
+.kg{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;margin-bottom:.7rem}
+.k{background:#fff;border:1px solid var(--line);border-radius:9px;padding:.6rem .65rem;transition:transform .22s var(--micro),box-shadow .22s var(--micro),border-color .22s}
+.k:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(13,22,38,.09);border-color:#dbe0e8}
+.k .ic{width:21px;height:21px;border-radius:6px;display:grid;place-items:center;font-size:.62rem;background:var(--t);color:var(--ti);margin-bottom:.35rem}
+.k .v{font-size:1.05rem;font-weight:800;letter-spacing:-.02em}
+.k .lb{font-size:.63rem;color:var(--muted);font-weight:600;margin-top:.05rem}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:.55rem .75rem;border-bottom:1px solid var(--line)}
+.ch h3{font-size:.79rem;margin:0}
+.ch .mt{font-size:.66rem;color:var(--muted);font-weight:600}
+.g2{display:grid;grid-template-columns:1.35fr 1fr;gap:.6rem}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:.59rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);padding:.38rem .75rem;background:var(--surface2);border-bottom:1px solid var(--line)}
+td{padding:.42rem .75rem;border-bottom:1px solid #f2f4f7;font-size:.745rem;color:var(--soft)}
+tbody tr{cursor:pointer;transition:background .16s var(--micro)}
+tbody tr:hover{background:#f7f9fb}
+tbody tr:last-child td{border-bottom:none}
+.pe{display:flex;align-items:center;gap:.42rem}
+.pe .a{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-weight:800;font-size:.56rem;background:var(--vi-t);color:#6d28d9}
+.pe .nn{font-weight:700;color:var(--ink);font-size:.745rem}
+.pl{display:inline-flex;align-items:center;gap:.22rem;font-size:.6rem;font-weight:800;padding:.1rem .4rem;border-radius:99px;transition:background .3s,color .3s}
+.pw{background:var(--am-t);color:#b45309}.ps{background:var(--em-t);color:var(--em-d)}
+.dot{width:5px;height:5px;border-radius:50%;display:inline-block}
+.nu{text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- MOTION ---------- */
+.stag{opacity:0;transform:translateY(10px)}
+.play .stag{animation:rise .5s var(--exp) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.play .ni.stag{animation-duration:.34s}
+
+/* skeleton */
+.sk{position:relative;overflow:hidden;background:#eef0f4;border-radius:5px;color:transparent!important}
+.sk *{visibility:hidden}
+.sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+ background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);animation:shim 1.15s infinite}
+@keyframes shim{100%{transform:translateX(100%)}}
+
+/* chart draw */
+#spark{stroke-dasharray:400;stroke-dashoffset:400}
+.play #spark{animation:draw 1.05s .25s var(--exp) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+#sparkfill{opacity:0}
+.play #sparkfill{animation:fade .6s .85s forwards}
+@keyframes fade{to{opacity:1}}
+
+/* slide-over */
+.scrim{position:absolute;inset:0;background:rgba(13,22,38,.32);opacity:0;pointer-events:none;transition:opacity .32s var(--micro);z-index:20;backdrop-filter:blur(1.5px)}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;top:0;right:0;bottom:0;width:310px;background:#fff;z-index:21;
+ transform:translateX(100%);transition:transform .42s var(--sheet);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(13,22,38,.16)}
+.sheet.show{transform:none}
+.sh{padding:.8rem .85rem;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start}
+.sb{flex:1;overflow-y:auto;padding:.85rem;display:flex;flex-direction:column;gap:.7rem}
+.s2{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}
+.s2 .b{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:.5rem .55rem}
+.s2 .l{font-size:.62rem;color:var(--muted);font-weight:700}
+.s2 .v{font-weight:800;font-size:.88rem;margin-top:.05rem}
+.sf{padding:.7rem .85rem;border-top:1px solid var(--line);display:flex;gap:.4rem}
+.bt{flex:1;border-radius:8px;padding:.45rem;font:inherit;font-size:.76rem;font-weight:700;border:1px solid transparent;cursor:pointer;transition:transform .13s var(--micro),box-shadow .2s,filter .2s}
+.bt:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(13,22,38,.12)}
+.bt:active{transform:scale(.97)}
+.bt.p{background:var(--em-d);color:#fff}
+.bt.o{background:#fff;border-color:#d5d9e0;color:var(--soft)}
+.x{width:24px;height:24px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--muted);font-size:.75rem;transition:background .18s,transform .13s}
+.x:hover{background:var(--surface2)}.x:active{transform:scale(.92)}
+
+/* toast */
+.toast{position:absolute;bottom:14px;left:50%;z-index:40;display:flex;align-items:center;gap:.5rem;
+ background:var(--ink);color:#fff;border-radius:9px;padding:.5rem .8rem;font-size:.76rem;font-weight:650;
+ transform:translate(-50%,22px);opacity:0;pointer-events:none;transition:transform .38s var(--exp),opacity .3s;box-shadow:0 10px 30px rgba(13,22,38,.28)}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.toast .tk{width:17px;height:17px;border-radius:99px;background:var(--em);color:#04231a;display:grid;place-items:center;font-size:.6rem;font-weight:900}
+
+.legend{margin-top:1.1rem;background:#fff;border:1px solid #dfe3ea;border-radius:11px;padding:.9rem 1rem}
+.legend h3{margin:0 0 .5rem;font-size:.88rem}
+.legend ul{margin:0;padding-left:1.05rem;color:#4b5565;font-size:.8rem;line-height:1.75}
+.legend b{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){
+ *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+body.rm *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+</style>
+
+<div class="wrap">
+  <div class="intro">
+    <h1>OneHub — motion study</h1>
+    <p>The same locked design, but live. Everything here is CSS transform/opacity only. Click the buttons to trigger each moment.</p>
+  </div>
+
+  <div class="ctrls">
+    <button class="cb" onclick="replay()">↻ Replay page load</button>
+    <button class="cb" onclick="fakeFetch()">◌ Simulate data fetch</button>
+    <button class="cb" onclick="openSheet()">▤ Open detail panel</button>
+    <button class="cb" id="rmBtn" onclick="toggleRM()">♿ Reduced motion: off</button>
+    <span class="note">…or just hover the cards, rows and nav.</span>
+  </div>
+
+  <div class="app" id="app">
+    <aside class="side">
+      <div class="brand stag" style="animation-delay:.02s"><div class="m">E</div><div class="n">Egypro OneHub</div></div>
+      <nav class="nav" id="nav">
+        <div id="pill"></div>
+        <div class="gl stag" style="animation-delay:.05s">Overview</div>
+        <div class="ni on stag" style="animation-delay:.07s"><span class="i">▦</span>Dashboard</div>
+        <div class="ni stag" style="animation-delay:.09s"><span class="i">◷</span>My Workspace</div>
+        <div class="gl stag" style="animation-delay:.11s">People</div>
+        <div class="ni stag" style="animation-delay:.13s"><span class="i">◍</span>Employees<span class="c">18</span></div>
+        <div class="ni stag" style="animation-delay:.15s"><span class="i">▤</span>Leave<span class="c">3</span></div>
+        <div class="ni stag" style="animation-delay:.17s"><span class="i">◈</span>Staff Advances<span class="c">2</span></div>
+        <div class="gl stag" style="animation-delay:.19s">Finance</div>
+        <div class="ni stag" style="animation-delay:.21s"><span class="i">▣</span>Payroll<span class="c">1</span></div>
+        <div class="ni stag" style="animation-delay:.23s"><span class="i">▥</span>Reports</div>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <div class="top">
+        <div class="srch">🔍 Search…</div>
+        <div class="ib">🔔<span class="d">5</span></div>
+      </div>
+      <div class="cont" id="cont">
+        <div class="ph stag" style="animation-delay:.10s"><h2>Good morning, Dora 👋</h2><p>August 2026 · Egypro Uganda</p></div>
+
+        <div class="kg">
+          <div class="k stag" style="animation-delay:.16s;--t:var(--vi-t);--ti:#6d28d9"><div class="ic">◍</div><div class="v tn" data-count="18">0</div><div class="lb">Active Employees</div></div>
+          <div class="k stag" style="animation-delay:.22s;--t:var(--em-t);--ti:var(--em-d)"><div class="ic">▣</div><div class="v tn" data-count="39.6" data-pre="UGX " data-suf="M" data-dec="1">0</div><div class="lb">Last Payroll Cost</div></div>
+          <div class="k stag" style="animation-delay:.28s;--t:var(--am-t);--ti:#b45309"><div class="ic">◷</div><div class="v tn" data-count="5">0</div><div class="lb">Pending Approvals</div></div>
+          <div class="k stag" style="animation-delay:.34s;--t:var(--ro-t);--ti:#be123c"><div class="ic">◈</div><div class="v tn" data-count="1.0" data-pre="UGX " data-suf="M" data-dec="2">0</div><div class="lb">Advances Out</div></div>
+        </div>
+
+        <div class="g2">
+          <div class="card stag" style="animation-delay:.40s">
+            <div class="ch"><h3>Approvals waiting on you</h3><span class="mt">Click a row →</span></div>
+            <table>
+              <thead><tr><th>Request</th><th>Employee</th><th class="nu">Amount</th><th>Status</th></tr></thead>
+              <tbody id="rows">
+                <tr onclick="openSheet()"><td><b style="color:var(--ink)">Staff advance</b></td><td><div class="pe"><div class="a">BT</div><div class="nn">Ben Ten</div></div></td><td class="nu">600,000</td><td><span class="pl pw" id="st1"><span class="dot" style="background:var(--am)"></span>Pending</span></td></tr>
+                <tr onclick="openSheet()"><td><b style="color:var(--ink)">Leave request</b></td><td><div class="pe"><div class="a" style="background:var(--bl-t);color:#1d4ed8">JM</div><div class="nn">Julie Moore</div></div></td><td class="nu">5 days</td><td><span class="pl pw"><span class="dot" style="background:var(--am)"></span>Pending</span></td></tr>
+                <tr onclick="openSheet()"><td><b style="color:var(--ink)">Cash advance</b></td><td><div class="pe"><div class="a" style="background:var(--cy-t);color:#0e7490">OP</div><div class="nn">Olivia Pope</div></div></td><td class="nu">350,000</td><td><span class="pl pw"><span class="dot" style="background:var(--am)"></span>Pending</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card stag" style="animation-delay:.46s">
+            <div class="ch"><h3>Payroll cost</h3><span class="mt">6 months</span></div>
+            <div style="padding:.65rem .75rem">
+              <svg width="100%" height="96" viewBox="0 0 260 96" preserveAspectRatio="none">
+                <defs><linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00c08b" stop-opacity=".3"/><stop offset="1" stop-color="#00c08b" stop-opacity="0"/></linearGradient></defs>
+                <path id="sparkfill" d="M0,66 L52,62 L104,58 L156,40 L208,32 L260,20 L260,96 L0,96Z" fill="url(#gg)"/>
+                <path id="spark" d="M0,66 L52,62 L104,58 L156,40 L208,32 L260,20" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round"/>
+              </svg>
+              <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--faint)"><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scrim" id="scrim" onclick="closeSheet()"></div>
+      <aside class="sheet" id="sheet">
+        <div class="sh">
+          <div><div style="font-size:.63rem;color:var(--muted);font-weight:700">ADVANCE · #A2026-014</div>
+            <div style="font-size:1rem;font-weight:800;margin-top:.15rem">Ben Ten</div>
+            <span class="pl pw" style="margin-top:.3rem;display:inline-flex" id="sheetPill"><span class="dot" style="background:var(--am)"></span>Pending</span></div>
+          <button class="x" onclick="closeSheet()">✕</button>
+        </div>
+        <div class="sb">
+          <div class="s2">
+            <div class="b"><div class="l">Amount</div><div class="v tn">UGX 600,000</div></div>
+            <div class="b"><div class="l">Instalments</div><div class="v tn">3</div></div>
+            <div class="b"><div class="l">Monthly</div><div class="v tn">UGX 200,000</div></div>
+            <div class="b"><div class="l">Starts</div><div class="v">1 Sep 2026</div></div>
+          </div>
+          <div><div style="font-size:.63rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:.25rem">Reason</div>
+            <p style="margin:0;font-size:.78rem">Emergency — family medical expense.</p></div>
+          <div><div style="font-size:.63rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem">History</div>
+            <div style="font-size:.75rem;display:flex;flex-direction:column;gap:.4rem">
+              <div style="display:flex;gap:.45rem"><span class="dot" style="background:var(--bl);margin-top:.35rem"></span><div><b>Request submitted</b><br><span style="color:var(--faint)">Ben Ten · 25 Jul 2026</span></div></div>
+              <div style="display:flex;gap:.45rem"><span class="dot" style="background:var(--faint);margin-top:.35rem"></span><div><b>Awaiting HR decision</b><br><span style="color:var(--faint)">2 days</span></div></div>
+            </div></div>
+        </div>
+        <div class="sf"><button class="bt o" onclick="closeSheet()">Reject</button><button class="bt p" onclick="approve()">Approve</button></div>
+      </aside>
+
+      <div class="toast" id="toast"><span class="tk">✓</span> Advance approved · Ben Ten</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h3>What's moving, and why</h3>
+    <ul>
+      <li><b>Staggered entrance (~0.02s apart)</b> — nav, then heading, KPIs, cards. Runs <i>once</i> per page load, never on re-render.</li>
+      <li><b>Numbers count up</b> — draws the eye to the figure that matters. Capped at ~0.9s.</li>
+      <li><b>Chart draws itself</b> — the line traces, then the fill fades in behind it.</li>
+      <li><b>Skeletons shaped like the content</b> — click <i>Simulate data fetch</i>. No spinner, no layout shift when data lands.</li>
+      <li><b>Hover</b> — cards lift 3px, rows tint, buttons lift; all ~0.2s.</li>
+      <li><b>Press</b> — buttons scale to 0.97 so a click feels physical.</li>
+      <li><b>Slide-over</b> — panel eases in over a blurred scrim; Esc or click-away closes it.</li>
+      <li><b>Optimistic confirmation</b> — hit Approve: the pill flips to Approved instantly and a toast rises. The screen never blocks you.</li>
+      <li><b>Reduced motion</b> — toggle it: every animation collapses to ~0. Non-negotiable for accessibility.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const app=document.getElementById('app');
+function counters(){
+  document.querySelectorAll('[data-count]').forEach(el=>{
+    const end=parseFloat(el.dataset.count),dec=+(el.dataset.dec||0),pre=el.dataset.pre||'',suf=el.dataset.suf||'';
+    if(document.body.classList.contains('rm')){el.textContent=pre+end.toFixed(dec)+suf;return;}
+    const dur=900,t0=performance.now();
+    (function tick(now){
+      const p=Math.min((now-t0)/dur,1),e=1-Math.pow(1-p,3);
+      el.textContent=pre+(end*e).toFixed(dec)+suf;
+      if(p<1)requestAnimationFrame(tick);
+    })(t0);
+  });
+}
+function replay(){
+  app.classList.remove('play');void app.offsetWidth;app.classList.add('play');counters();
+}
+function fakeFetch(){
+  const els=[...document.querySelectorAll('.k .v, .k .lb, #rows td')];
+  els.forEach(e=>e.classList.add('sk'));
+  setTimeout(()=>{els.forEach(e=>e.classList.remove('sk'));counters();},1500);
+}
+const sheet=document.getElementById('sheet'),scrim=document.getElementById('scrim'),toast=document.getElementById('toast');
+function openSheet(){sheet.classList.add('show');scrim.classList.add('show')}
+function closeSheet(){sheet.classList.remove('show');scrim.classList.remove('show')}
+function approve(){
+  ['st1','sheetPill'].forEach(id=>{
+    const p=document.getElementById(id);
+    p.classList.remove('pw');p.classList.add('ps');
+    p.innerHTML='<span class="dot" style="background:var(--em-d)"></span>Approved';
+  });
+  closeSheet();
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2600);
+}
+function toggleRM(){
+  document.body.classList.toggle('rm');
+  const on=document.body.classList.contains('rm');
+  const b=document.getElementById('rmBtn');
+  b.textContent='♿ Reduced motion: '+(on?'on':'off');b.classList.toggle('on',on);
+}
+addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+requestAnimationFrame(()=>{app.classList.add('play');counters()});
+</script>

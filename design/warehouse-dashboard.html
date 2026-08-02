@@ -1,0 +1,217 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+ --side:#0e1626; --line-d:#1b2740;
+ --canvas:#f5f6f8; --surface:#fff; --surface2:#fafbfc; --line:#e7e9ee;
+ --ink:#0d1626; --soft:#3d4757; --muted:#7a8494; --faint:#a3abb8;
+ --em:#00c08b; --em-d:#059669; --em-t:#e3f9f1;
+ --vi:#8b5cf6; --vi-t:#f2ecfe; --bl:#3b82f6; --bl-t:#e9f1fe;
+ --am:#f59e0b; --am-t:#fef4e1; --ro:#f43f5e; --ro-t:#ffe9ed; --cy:#06b6d4; --cy-t:#e0f8fb;
+ --pk:#ec4899; --pk-t:#fdeaf4;
+ --fd:'Plus Jakarta Sans',system-ui,sans-serif; --fb:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}
+body{font-family:var(--fb);font-size:13.5px;background:var(--canvas);color:var(--ink);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--fd);margin:0}.tn{font-variant-numeric:tabular-nums}
+.app{display:flex;height:100vh}
+.side{width:224px;flex-shrink:0;background:var(--side);color:#fff;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:.55rem;padding:1rem .95rem .5rem}
+.brand .m{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--em),var(--em-d));display:grid;place-items:center;font-family:var(--fd);font-weight:800;color:#04231a;font-size:.9rem}
+.brand .n{font-family:var(--fd);font-weight:800;font-size:.87rem}
+.brand .s{font-size:.57rem;color:#5b6880;letter-spacing:.09em;text-transform:uppercase;font-weight:700}
+.org{margin:.35rem .7rem .2rem;padding:.5rem .6rem;border-radius:8px;background:#131d2f;border:1px solid #1b2740}
+.org .o1{font-size:.75rem;font-weight:700;color:var(--em)}
+.org .o2{font-size:.62rem;color:#67748c;margin-top:.05rem}
+.nav{flex:1;overflow-y:auto;padding:.2rem .6rem}.nav::-webkit-scrollbar{width:0}
+.gl{font-size:.6rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#4e5b73;padding:.8rem .5rem .28rem}
+.ni{display:flex;align-items:center;gap:.55rem;padding:.44rem .5rem;border-radius:7px;color:#aab4c5;font-size:.805rem;font-weight:500;margin-bottom:1px;position:relative}
+.ni .i{width:15px;text-align:center;font-size:.85rem;opacity:.75;flex-shrink:0}
+.ni .c{margin-left:auto;font-size:.63rem;font-weight:800;background:#1c273d;color:#8d99ad;border-radius:999px;padding:.02rem .34rem;min-width:17px;text-align:center}
+.ni.on{background:#132a24;color:#fff;font-weight:600}
+.ni.on .i{opacity:1;color:var(--em)}
+.ni.on::before{content:"";position:absolute;left:-.6rem;top:.3rem;bottom:.3rem;width:2.5px;border-radius:0 3px 3px 0;background:var(--em)}
+.ni .c.al{background:var(--am);color:#3d2704}
+.ni .c.dg{background:var(--ro);color:#fff}
+.ai-btn{margin:.5rem .7rem;padding:.5rem .6rem;border-radius:9px;border:1px solid #3d3216;background:#2a2413;color:#ffd76e;font-size:.76rem;font-weight:700;display:flex;align-items:center;gap:.4rem;justify-content:center}
+.sfoot{margin:0 .6rem .55rem;padding:.5rem .55rem;border-top:1px solid var(--line-d);display:flex;align-items:center;gap:.5rem}
+.sfoot .av{width:28px;height:28px;border-radius:7px;background:var(--bl);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.65rem}
+.sfoot .nm{font-size:.75rem;font-weight:700;color:#e6eaf1}.sfoot .rl{font-size:.62rem;color:#63708a}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{height:50px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:.7rem;padding:0 1.15rem}
+.srch{display:flex;align-items:center;gap:.4rem;background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:.33rem .6rem;color:var(--faint);font-size:.76rem;width:250px}
+.sp{flex:1}
+.ib{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--muted);font-size:.78rem;position:relative}
+.ib .d{position:absolute;top:-3px;right:-3px;min-width:14px;height:14px;border-radius:999px;background:var(--ro);color:#fff;font-size:.55rem;font-weight:800;display:grid;place-items:center;border:2px solid #fff}
+.cont{flex:1;overflow-y:auto;padding:1.1rem 1.3rem 2rem}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.9rem}
+.ph h1{font-size:1.32rem;letter-spacing:-.015em}
+.ph p{color:var(--muted);font-size:.79rem;margin:.12rem 0 0}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border-radius:7px;padding:.42rem .75rem;font-size:.78rem;font-weight:700;border:1px solid transparent;white-space:nowrap}
+.bp{background:var(--em-d);color:#fff}.bo{background:#fff;border-color:#d5d9e0;color:var(--soft)}
+
+.kg{display:grid;grid-template-columns:repeat(6,1fr);gap:.65rem;margin-bottom:.85rem}
+.k{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.7rem .75rem}
+.k .ic{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font-size:.7rem;background:var(--t);color:var(--ti);margin-bottom:.45rem}
+.k .v{font-family:var(--fd);font-size:1.18rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.k .v.sm{font-size:.95rem}
+.k .lb{font-size:.67rem;color:var(--muted);font-weight:600;margin-top:.1rem}
+.k .dt{font-size:.63rem;color:var(--faint);margin-top:.25rem}
+.k .dt.g{color:var(--em-d);font-weight:700}.k .dt.w{color:#b45309;font-weight:700}.k .dt.r{color:#be123c;font-weight:700}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:.65rem .85rem;border-bottom:1px solid var(--line)}
+.ch h3{font-size:.83rem;display:flex;align-items:center;gap:.4rem}
+.ch h3 .hi{width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:.62rem;background:var(--t,var(--em-t));color:var(--ti,var(--em-d))}
+.ch .mt{font-size:.69rem;color:var(--muted);font-weight:600}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.85rem}
+.g3{display:grid;grid-template-columns:.85fr 1.15fr 1fr;gap:.75rem}
+.al{display:flex;align-items:center;gap:.6rem;padding:.5rem .85rem;border-bottom:1px solid #f2f4f7}
+.al:last-child{border-bottom:none}
+.al .ai{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-size:.75rem;background:var(--t);color:var(--ti);flex-shrink:0}
+.al .t1{font-size:.775rem;font-weight:700;color:var(--ink)}
+.al .t2{font-size:.68rem;color:var(--muted);margin-top:.02rem}
+.al .rt{margin-left:auto;font-size:.66rem;font-weight:700;color:var(--faint);white-space:nowrap}
+.al .rt.ur{color:#be123c}
+.qa{display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;border-radius:8px;background:var(--surface2);border:1px solid var(--line);margin-bottom:.35rem}
+.qa .qi{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:.7rem;background:var(--t);color:var(--ti);flex-shrink:0}
+.qa .q1{font-size:.765rem;font-weight:700}.qa .q2{font-size:.66rem;color:var(--muted)}
+.qa .ar{margin-left:auto;color:var(--faint);font-size:.8rem}
+.pr{display:flex;align-items:center;gap:.6rem;padding:.45rem .85rem;border-bottom:1px solid #f2f4f7}
+.pr:last-child{border-bottom:none}
+.pr .p1{font-size:.78rem;font-weight:700}.pr .p2{font-size:.66rem;color:var(--faint)}
+.pl{display:inline-flex;align-items:center;gap:.25rem;font-size:.62rem;font-weight:800;padding:.12rem .42rem;border-radius:999px}
+.ps{background:var(--em-t);color:var(--em-d)}.pw{background:var(--am-t);color:#b45309}.pdg{background:var(--ro-t);color:#be123c}
+.bar{height:6px;background:#eef0f4;border-radius:99px;overflow:hidden}
+</style></head>
+<body><div class="app">
+
+<aside class="side">
+  <div class="brand"><div class="m">E</div><div><div class="n">Egypro OneHub</div><div class="s">Powered by JantaHR</div></div></div>
+  <div class="org"><div class="o1">HQ Warehouse</div><div class="o2">Egypro Uganda · Kampala</div></div>
+  <nav class="nav">
+    <div class="gl">Overview</div>
+    <div class="ni on"><span class="i">▦</span>Dashboard</div>
+    <div class="ni"><span class="i">◷</span>My Workspace</div>
+
+    <div class="gl">Inventory</div>
+    <div class="ni"><span class="i">▨</span>Consumables<span class="c">142</span></div>
+    <div class="ni"><span class="i">▩</span>Equipment<span class="c">38</span></div>
+    <div class="ni"><span class="i">◰</span>Stock Requests<span class="c dg">7</span></div>
+    <div class="ni"><span class="i">⇲</span>Receiving</div>
+    <div class="ni"><span class="i">☰</span>Stock Ledger</div>
+    <div class="ni"><span class="i">⚏</span>Bulk Tools</div>
+
+    <div class="gl">Custody</div>
+    <div class="ni"><span class="i">◍</span>Issued Assets<span class="c">21</span></div>
+    <div class="ni"><span class="i">↩</span>Returns Due<span class="c al">4</span></div>
+
+    <div class="gl">Operations</div>
+    <div class="ni"><span class="i">◱</span>Projects<span class="c">6</span></div>
+    <div class="ni"><span class="i">◈</span>Project Cash</div>
+
+    <div class="gl">System</div>
+    <div class="ni"><span class="i">▥</span>Reports</div>
+    <div class="ni"><span class="i">☰</span>Audit Log</div>
+  </nav>
+  <div class="ai-btn">✦ Ask AI Assistant</div>
+  <div class="sfoot"><div class="av">BT</div><div><div class="nm">Ben Ten</div><div class="rl">Warehouse Manager</div></div></div>
+</aside>
+
+<div class="main">
+  <div class="top">
+    <div class="srch">🔍 Search items, assets, requests…</div><div class="sp"></div>
+    <div class="ib">🔔<span class="d">7</span></div><div class="ib">💬</div>
+  </div>
+
+  <div class="cont">
+    <div class="ph">
+      <div><h1>Good morning, Ben 👋</h1><p>Sunday, 2 August · HQ Warehouse · 7 requests awaiting your approval</p></div>
+      <div style="display:flex;gap:.4rem"><div class="btn bo">⌗ Scan QR</div><div class="btn bp">⇲ Receive Stock</div></div>
+    </div>
+
+    <div class="kg">
+      <div class="k" style="--t:var(--bl-t);--ti:#1d4ed8"><div class="ic">▨</div><div class="v tn">142</div><div class="lb">Consumable SKUs</div><div class="dt">Item masters at HQ</div></div>
+      <div class="k" style="--t:var(--vi-t);--ti:#6d28d9"><div class="ic">▩</div><div class="v tn">38</div><div class="lb">Equipment Assets</div><div class="dt g">17 available</div></div>
+      <div class="k" style="--t:var(--ro-t);--ti:#be123c"><div class="ic">◰</div><div class="v tn">7</div><div class="lb">Pending Requests</div><div class="dt r">2 escalated to CFO</div></div>
+      <div class="k" style="--t:var(--am-t);--ti:#b45309"><div class="ic">⚠</div><div class="v tn">9</div><div class="lb">Low Stock Items</div><div class="dt w">Below reorder level</div></div>
+      <div class="k" style="--t:var(--cy-t);--ti:#0e7490"><div class="ic">◍</div><div class="v tn">21</div><div class="lb">Assets in Custody</div><div class="dt w">4 returns overdue</div></div>
+      <div class="k" style="--t:var(--em-t);--ti:var(--em-d)"><div class="ic">☰</div><div class="v tn sm">UGX 84.2M</div><div class="lb">Stock Value</div><div class="dt g">+6.1% vs Jul</div></div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><h3><span class="hi">◹</span>Stock Movements</h3><span class="mt">Issued vs Received · 7 months</span></div>
+        <div style="padding:.8rem .85rem">
+          <svg width="100%" height="132" viewBox="0 0 320 132" preserveAspectRatio="none">
+            <line x1="0" y1="20" x2="320" y2="20" stroke="#eef0f4"/><line x1="0" y1="55" x2="320" y2="55" stroke="#eef0f4"/><line x1="0" y1="90" x2="320" y2="90" stroke="#eef0f4"/>
+            <g fill="#3b82f6"><rect x="8" y="62" width="16" height="50" rx="3"/><rect x="53" y="52" width="16" height="60" rx="3"/><rect x="98" y="70" width="16" height="42" rx="3"/><rect x="143" y="44" width="16" height="68" rx="3"/><rect x="188" y="38" width="16" height="74" rx="3"/><rect x="233" y="56" width="16" height="56" rx="3"/><rect x="278" y="30" width="16" height="82" rx="3"/></g>
+            <g fill="#00c08b" opacity=".85"><rect x="26" y="78" width="16" height="34" rx="3"/><rect x="71" y="70" width="16" height="42" rx="3"/><rect x="116" y="84" width="16" height="28" rx="3"/><rect x="161" y="66" width="16" height="46" rx="3"/><rect x="206" y="60" width="16" height="52" rx="3"/><rect x="251" y="74" width="16" height="38" rx="3"/><rect x="296" y="54" width="16" height="58" rx="3"/></g>
+          </svg>
+          <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--faint);margin-top:.25rem"><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span></div>
+          <div style="display:flex;gap:1rem;font-size:.68rem;margin-top:.5rem;color:var(--muted)"><span><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#3b82f6"></span> Issued</span><span><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#00c08b"></span> Received</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><h3 style="--t:var(--ro-t);--ti:#be123c"><span class="hi">◰</span>Request Pipeline</h3><span class="mt">7 open</span></div>
+        <div style="padding:.85rem;display:flex;flex-direction:column;gap:.65rem">
+          <div><div style="display:flex;justify-content:space-between;font-size:.74rem;margin-bottom:.22rem"><span style="font-weight:600">Awaiting my approval</span><b class="tn">5</b></div><div class="bar"><div style="width:71%;height:100%;background:var(--ro);border-radius:99px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:.74rem;margin-bottom:.22rem"><span style="font-weight:600">Escalated to CFO</span><b class="tn">2</b></div><div class="bar"><div style="width:29%;height:100%;background:var(--am);border-radius:99px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:.74rem;margin-bottom:.22rem"><span style="font-weight:600">Approved, awaiting issue</span><b class="tn">3</b></div><div class="bar"><div style="width:43%;height:100%;background:var(--bl);border-radius:99px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:.74rem;margin-bottom:.22rem"><span style="font-weight:600">Issued this month</span><b class="tn">28</b></div><div class="bar"><div style="width:100%;height:100%;background:var(--em);border-radius:99px"></div></div></div>
+          <div style="display:flex;gap:1.3rem;margin-top:.2rem;padding-top:.55rem;border-top:1px solid var(--line)">
+            <div><div style="font-size:.63rem;color:var(--muted);font-weight:600">Avg approval time</div><div style="font-family:var(--fd);font-weight:800;font-size:.95rem">3.4h</div></div>
+            <div><div style="font-size:.63rem;color:var(--muted);font-weight:600">Oldest pending</div><div style="font-family:var(--fd);font-weight:800;font-size:.95rem;color:#be123c">2 days</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="g3">
+      <div class="card">
+        <div class="ch"><h3 style="--t:var(--am-t);--ti:#b45309"><span class="hi">⚠</span>Low Stock</h3><span class="mt">9 items</span></div>
+        <div style="padding:.75rem .85rem;display:flex;flex-direction:column;gap:.55rem">
+          <div><div style="display:flex;justify-content:space-between;font-size:.73rem;margin-bottom:.2rem"><span style="font-weight:600">Fibre patch cord 3m</span><b class="tn" style="color:#be123c">4 / 40</b></div><div class="bar"><div style="width:10%;height:100%;background:var(--ro);border-radius:99px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:.73rem;margin-bottom:.2rem"><span style="font-weight:600">Cable ties 200mm</span><b class="tn" style="color:#be123c">60 / 500</b></div><div class="bar"><div style="width:12%;height:100%;background:var(--ro);border-radius:99px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:.73rem;margin-bottom:.2rem"><span style="font-weight:600">Safety gloves (L)</span><b class="tn" style="color:#b45309">12 / 60</b></div><div class="bar"><div style="width:20%;height:100%;background:var(--am);border-radius:99px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:.73rem;margin-bottom:.2rem"><span style="font-weight:600">SC/APC connectors</span><b class="tn" style="color:#b45309">45 / 200</b></div><div class="bar"><div style="width:23%;height:100%;background:var(--am);border-radius:99px"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:.73rem;margin-bottom:.2rem"><span style="font-weight:600">Duct tape rolls</span><b class="tn" style="color:#b45309">9 / 35</b></div><div class="bar"><div style="width:26%;height:100%;background:var(--am);border-radius:99px"></div></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><h3 style="--t:var(--am-t);--ti:#b45309"><span class="hi">🔔</span>Warehouse Alerts &amp; Events</h3><span class="mt">Next 30 days</span></div>
+        <div>
+          <div class="al" style="--t:var(--ro-t);--ti:#be123c"><div class="ai">◰</div><div><div class="t1">Stock request awaiting approval</div><div class="t2">Mbarara MTN Site Upgrade · UGX 1.24M</div></div><div class="rt ur">2 days</div></div>
+          <div class="al" style="--t:var(--ro-t);--ti:#be123c"><div class="ai">↩</div><div><div class="t1">Equipment return overdue</div><div class="t2">Fusion splicer #FS-004 · Andrew Kaggwa</div></div><div class="rt ur">5 days</div></div>
+          <div class="al" style="--t:var(--am-t);--ti:#b45309"><div class="ai">⚠</div><div><div class="t1">Below reorder level</div><div class="t2">Fibre patch cord 3m · 4 remaining</div></div><div class="rt">Now</div></div>
+          <div class="al" style="--t:var(--vi-t);--ti:#6d28d9"><div class="ai">◍</div><div><div class="t1">Sensitive asset checked out</div><div class="t2">OTDR #OT-002 · Brian Atuhura</div></div><div class="rt">Due 9 Aug</div></div>
+          <div class="al" style="--t:var(--bl-t);--ti:#1d4ed8"><div class="ai">⇲</div><div><div class="t1">Delivery expected</div><div class="t2">PO-2026-118 · 3 line items</div></div><div class="rt">6 Aug</div></div>
+          <div class="al" style="--t:var(--cy-t);--ti:#0e7490"><div class="ai">◎</div><div><div class="t1">Warranty expiring</div><div class="t2">Generator #GN-001 · 2yr cover</div></div><div class="rt">24 Aug</div></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div class="card">
+          <div class="ch"><h3 style="--t:var(--em-t);--ti:var(--em-d)"><span class="hi">⚡</span>Quick Actions</h3></div>
+          <div style="padding:.6rem .7rem">
+            <div class="qa" style="--t:var(--bl-t);--ti:#1d4ed8"><div class="qi">⇲</div><div><div class="q1">Receive New Item</div><div class="q2">Create item master &amp; first receipt</div></div><span class="ar">›</span></div>
+            <div class="qa" style="--t:var(--em-t);--ti:var(--em-d)"><div class="qi">＋</div><div><div class="q1">Receive Existing Stock</div><div class="q2">Top up a known SKU</div></div><span class="ar">›</span></div>
+            <div class="qa" style="--t:var(--vi-t);--ti:#6d28d9"><div class="qi">▩</div><div><div class="q1">Add Equipment Asset</div><div class="q2">Serialised, QR-tagged</div></div><span class="ar">›</span></div>
+            <div class="qa" style="--t:var(--ro-t);--ti:#be123c"><div class="qi">◰</div><div><div class="q1">Review Stock Requests</div><div class="q2">7 awaiting decision</div></div><span class="ar">›</span></div>
+            <div class="qa" style="--t:var(--cy-t);--ti:#0e7490;margin-bottom:0"><div class="qi">⌗</div><div><div class="q1">Scan QR / Issue</div><div class="q2">Check assets in or out</div></div><span class="ar">›</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><h3 style="--t:var(--bl-t);--ti:#1d4ed8"><span class="hi">☰</span>Recent Movements</h3><span class="mt">View all ›</span></div>
+          <div>
+            <div class="pr"><div><div class="p1">Issued · 12 × SC/APC</div><div class="p2">Mbarara Site · Andrew Kaggwa</div></div><span class="pl pw" style="margin-left:auto">Out</span></div>
+            <div class="pr"><div><div class="p1">Received · 200 × Cable ties</div><div class="p2">PO-2026-117 · verified</div></div><span class="pl ps" style="margin-left:auto">In</span></div>
+            <div class="pr"><div><div class="p1">Returned · OTDR #OT-005</div><div class="p2">Bin'Latif Magola · good condition</div></div><span class="pl ps" style="margin-left:auto">In</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div></body></html>

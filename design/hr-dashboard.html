@@ -1,0 +1,250 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+ --side:#0e1626; --line-d:#1b2740;
+ --canvas:#f5f6f8; --surface:#fff; --surface2:#fafbfc; --line:#e7e9ee;
+ --ink:#0d1626; --soft:#3d4757; --muted:#7a8494; --faint:#a3abb8;
+ --em:#00c08b; --em-d:#059669; --em-t:#e3f9f1;
+ --vi:#8b5cf6; --vi-t:#f2ecfe; --bl:#3b82f6; --bl-t:#e9f1fe;
+ --am:#f59e0b; --am-t:#fef4e1; --ro:#f43f5e; --ro-t:#ffe9ed; --cy:#06b6d4; --cy-t:#e0f8fb;
+ --pk:#ec4899; --pk-t:#fdeaf4;
+ --fd:'Plus Jakarta Sans',system-ui,sans-serif; --fb:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}
+body{font-family:var(--fb);font-size:13.5px;background:var(--canvas);color:var(--ink);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--fd);margin:0}.tn{font-variant-numeric:tabular-nums}
+.app{display:flex;height:100vh}
+
+/* SIDEBAR — legacy categorisation */
+.side{width:224px;flex-shrink:0;background:var(--side);color:#fff;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:.55rem;padding:1rem .95rem .5rem}
+.brand .m{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--em),var(--em-d));display:grid;place-items:center;font-family:var(--fd);font-weight:800;color:#04231a;font-size:.9rem}
+.brand .n{font-family:var(--fd);font-weight:800;font-size:.87rem}
+.brand .s{font-size:.57rem;color:#5b6880;letter-spacing:.09em;text-transform:uppercase;font-weight:700}
+.org{margin:.35rem .7rem .2rem;padding:.5rem .6rem;border-radius:8px;background:#131d2f;border:1px solid #1b2740}
+.org .o1{font-size:.75rem;font-weight:700;color:var(--em)}
+.org .o2{font-size:.62rem;color:#67748c;margin-top:.05rem}
+.nav{flex:1;overflow-y:auto;padding:.2rem .6rem}.nav::-webkit-scrollbar{width:0}
+.gl{font-size:.6rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#4e5b73;padding:.8rem .5rem .28rem}
+.ni{display:flex;align-items:center;gap:.55rem;padding:.44rem .5rem;border-radius:7px;color:#aab4c5;font-size:.805rem;font-weight:500;margin-bottom:1px;position:relative}
+.ni .i{width:15px;text-align:center;font-size:.85rem;opacity:.75;flex-shrink:0}
+.ni .c{margin-left:auto;font-size:.63rem;font-weight:800;background:#1c273d;color:#8d99ad;border-radius:999px;padding:.02rem .34rem;min-width:17px;text-align:center}
+.ni.on{background:#132a24;color:#fff;font-weight:600}
+.ni.on .i{opacity:1;color:var(--em)}
+.ni.on::before{content:"";position:absolute;left:-.6rem;top:.3rem;bottom:.3rem;width:2.5px;border-radius:0 3px 3px 0;background:var(--em)}
+.ni .c.al{background:var(--am);color:#3d2704}
+.ai-btn{margin:.5rem .7rem;padding:.5rem .6rem;border-radius:9px;border:1px solid #3d3216;background:#2a2413;color:#ffd76e;font-size:.76rem;font-weight:700;display:flex;align-items:center;gap:.4rem;justify-content:center}
+.sfoot{margin:0 .6rem .55rem;padding:.5rem .55rem;border-top:1px solid var(--line-d);display:flex;align-items:center;gap:.5rem}
+.sfoot .av{width:28px;height:28px;border-radius:7px;background:var(--em);color:#04231a;display:grid;place-items:center;font-weight:800;font-size:.65rem}
+.sfoot .nm{font-size:.75rem;font-weight:700;color:#e6eaf1}.sfoot .rl{font-size:.62rem;color:#63708a}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{height:50px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:.7rem;padding:0 1.15rem}
+.srch{display:flex;align-items:center;gap:.4rem;background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:.33rem .6rem;color:var(--faint);font-size:.76rem;width:250px}
+.sp{flex:1}
+.ib{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--muted);font-size:.78rem;position:relative}
+.ib .d{position:absolute;top:-3px;right:-3px;min-width:14px;height:14px;border-radius:999px;background:var(--ro);color:#fff;font-size:.55rem;font-weight:800;display:grid;place-items:center;border:2px solid #fff}
+.cont{flex:1;overflow-y:auto;padding:1.1rem 1.3rem 2rem}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.9rem}
+.ph h1{font-size:1.32rem;letter-spacing:-.015em}
+.ph p{color:var(--muted);font-size:.79rem;margin:.12rem 0 0}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border-radius:7px;padding:.42rem .75rem;font-size:.78rem;font-weight:700;border:1px solid transparent;white-space:nowrap}
+.bp{background:var(--em-d);color:#fff}.bo{background:#fff;border-color:#d5d9e0;color:var(--soft)}
+
+.kg{display:grid;grid-template-columns:repeat(6,1fr);gap:.65rem;margin-bottom:.85rem}
+.k{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.7rem .75rem}
+.k .ic{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font-size:.7rem;background:var(--t);color:var(--ti);margin-bottom:.45rem}
+.k .v{font-family:var(--fd);font-size:1.18rem;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.k .v.sm{font-size:.95rem}
+.k .lb{font-size:.67rem;color:var(--muted);font-weight:600;margin-top:.1rem}
+.k .dt{font-size:.63rem;color:var(--faint);margin-top:.25rem}
+.k .dt.g{color:var(--em-d);font-weight:700}.k .dt.w{color:#b45309;font-weight:700}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:.65rem .85rem;border-bottom:1px solid var(--line)}
+.ch h3{font-size:.83rem;display:flex;align-items:center;gap:.4rem}
+.ch h3 .hi{width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:.62rem;background:var(--t,var(--em-t));color:var(--ti,var(--em-d))}
+.ch .mt{font-size:.69rem;color:var(--muted);font-weight:600}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.85rem}
+.g3{display:grid;grid-template-columns:.85fr 1.15fr 1fr;gap:.75rem}
+
+/* alerts list */
+.al{display:flex;align-items:center;gap:.6rem;padding:.5rem .85rem;border-bottom:1px solid #f2f4f7}
+.al:last-child{border-bottom:none}
+.al .ai{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-size:.75rem;background:var(--t);color:var(--ti);flex-shrink:0}
+.al .t1{font-size:.775rem;font-weight:700;color:var(--ink)}
+.al .t2{font-size:.68rem;color:var(--muted);margin-top:.02rem}
+.al .rt{margin-left:auto;font-size:.66rem;font-weight:700;color:var(--faint);white-space:nowrap}
+.al .rt.ur{color:#be123c}
+
+/* quick actions */
+.qa{display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;border-radius:8px;background:var(--surface2);border:1px solid var(--line);margin-bottom:.35rem}
+.qa .qi{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:.7rem;background:var(--t);color:var(--ti);flex-shrink:0}
+.qa .q1{font-size:.765rem;font-weight:700}
+.qa .q2{font-size:.66rem;color:var(--muted)}
+.qa .ar{margin-left:auto;color:var(--faint);font-size:.8rem}
+
+/* payroll runs */
+.pr{display:flex;align-items:center;gap:.6rem;padding:.45rem .85rem;border-bottom:1px solid #f2f4f7}
+.pr:last-child{border-bottom:none}
+.pr .p1{font-size:.78rem;font-weight:700}
+.pr .p2{font-size:.66rem;color:var(--faint)}
+.pl{display:inline-flex;align-items:center;gap:.25rem;font-size:.62rem;font-weight:800;padding:.12rem .42rem;border-radius:999px;letter-spacing:.02em}
+.ps{background:var(--em-t);color:var(--em-d)}.pw{background:var(--am-t);color:#b45309}
+</style></head>
+<body><div class="app">
+
+<aside class="side">
+  <div class="brand"><div class="m">E</div><div><div class="n">Egypro OneHub</div><div class="s">Powered by JantaHR</div></div></div>
+  <div class="org"><div class="o1">Egypro Uganda</div><div class="o2">UGX · UG</div></div>
+  <nav class="nav">
+    <div class="gl">Overview</div>
+    <div class="ni on"><span class="i">▦</span>Dashboard</div>
+    <div class="ni"><span class="i">◷</span>My Workspace</div>
+
+    <div class="gl">People</div>
+    <div class="ni"><span class="i">◍</span>Employees<span class="c">18</span></div>
+    <div class="ni"><span class="i">▤</span>Leave<span class="c al">3</span></div>
+    <div class="ni"><span class="i">◎</span>Performance</div>
+    <div class="ni"><span class="i">▩</span>Training</div>
+    <div class="ni"><span class="i">◫</span>Pay Grades</div>
+
+    <div class="gl">Finance</div>
+    <div class="ni"><span class="i">▣</span>Payroll<span class="c al">1</span></div>
+    <div class="ni"><span class="i">◈</span>Staff Advances<span class="c">2</span></div>
+    <div class="ni"><span class="i">⇅</span>Deductions &amp; Adj</div>
+    <div class="ni"><span class="i">⇱</span>Statutory Exports</div>
+
+    <div class="gl">Operations</div>
+    <div class="ni"><span class="i">◱</span>Projects<span class="c">6</span></div>
+    <div class="ni"><span class="i">▨</span>Inventory</div>
+    <div class="ni"><span class="i">◰</span>Project Cash<span class="c al">2</span></div>
+
+    <div class="gl">System</div>
+    <div class="ni"><span class="i">▥</span>Reports</div>
+    <div class="ni"><span class="i">⚙</span>Settings</div>
+    <div class="ni"><span class="i">☰</span>Audit Log</div>
+  </nav>
+  <div class="ai-btn">✦ Ask AI Assistant</div>
+  <div class="sfoot"><div class="av">DA</div><div><div class="nm">Dora Agai</div><div class="rl">HR Administrator</div></div></div>
+</aside>
+
+<div class="main">
+  <div class="top">
+    <div class="srch">🔍 Search employees, payroll, leave…</div><div class="sp"></div>
+    <div class="ib">🔔<span class="d">5</span></div><div class="ib">💬</div>
+  </div>
+
+  <div class="cont">
+    <div class="ph">
+      <div><h1>Good morning, Dora 👋</h1><p>August 2026 · Egypro Uganda · 5 items need your attention</p></div>
+      <div style="display:flex;gap:.4rem"><div class="btn bo">▤ Log Leave</div><div class="btn bp">▣ Run Payroll</div></div>
+    </div>
+
+    <div class="kg">
+      <div class="k" style="--t:var(--vi-t);--ti:#6d28d9"><div class="ic">◍</div><div class="v tn">18</div><div class="lb">Active Employees</div><div class="dt g">+2 this month</div></div>
+      <div class="k" style="--t:var(--em-t);--ti:var(--em-d)"><div class="ic">▣</div><div class="v tn sm">UGX 39.60M</div><div class="lb">Last Payroll Cost</div><div class="dt">July 2026</div></div>
+      <div class="k" style="--t:var(--bl-t);--ti:#1d4ed8"><div class="ic">▤</div><div class="v tn">2</div><div class="lb">On Leave Today</div><div class="dt">Back 5 Aug</div></div>
+      <div class="k" style="--t:var(--ro-t);--ti:#be123c"><div class="ic">◈</div><div class="v tn sm">UGX 1.00M</div><div class="lb">Advances Outstanding</div><div class="dt w">2 active</div></div>
+      <div class="k" style="--t:var(--am-t);--ti:#b45309"><div class="ic">◎</div><div class="v tn">3</div><div class="lb">Reviews Pending</div><div class="dt w">Cycle closes 15 Aug</div></div>
+      <div class="k" style="--t:var(--cy-t);--ti:#0e7490"><div class="ic">◷</div><div class="v sm">Not started</div><div class="lb">August Payroll</div><div class="dt w">Due in 9 days</div></div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><h3><span class="hi">◹</span>Payroll Cost Over Time</h3><span class="mt">Gross vs Employer NSSF</span></div>
+        <div style="padding:.8rem .85rem">
+          <svg width="100%" height="132" viewBox="0 0 320 132" preserveAspectRatio="none">
+            <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00c08b" stop-opacity=".3"/><stop offset="1" stop-color="#00c08b" stop-opacity="0"/></linearGradient></defs>
+            <line x1="0" y1="20" x2="320" y2="20" stroke="#eef0f4"/><line x1="0" y1="55" x2="320" y2="55" stroke="#eef0f4"/><line x1="0" y1="90" x2="320" y2="90" stroke="#eef0f4"/>
+            <path d="M0,86 L53,84 L106,80 L160,58 L213,52 L266,44 L320,32 L320,132 L0,132Z" fill="url(#g1)"/>
+            <path d="M0,86 L53,84 L106,80 L160,58 L213,52 L266,44 L320,32" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M0,112 L53,111 L106,109 L160,102 L213,100 L266,97 L320,93" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3 3"/>
+            <circle cx="320" cy="32" r="3.4" fill="#059669"/>
+          </svg>
+          <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--faint);margin-top:.25rem"><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span></div>
+          <div style="display:flex;gap:1rem;font-size:.68rem;margin-top:.5rem;color:var(--muted)"><span><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#059669"></span> Total Gross</span><span><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#f59e0b"></span> Employer NSSF</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><h3 style="--t:var(--vi-t);--ti:#6d28d9"><span class="hi">◍</span>Headcount Growth</h3><span class="mt">18 employees</span></div>
+        <div style="padding:.8rem .85rem">
+          <svg width="100%" height="132" viewBox="0 0 320 132" preserveAspectRatio="none">
+            <line x1="0" y1="20" x2="320" y2="20" stroke="#eef0f4"/><line x1="0" y1="55" x2="320" y2="55" stroke="#eef0f4"/><line x1="0" y1="90" x2="320" y2="90" stroke="#eef0f4"/>
+            <path d="M0,105 L53,95 L106,84 L160,66 L213,52 L266,40 L320,34" fill="none" stroke="#8b5cf6" stroke-width="2.2" stroke-linecap="round"/>
+            <circle cx="0" cy="105" r="3" fill="#8b5cf6"/><circle cx="53" cy="95" r="3" fill="#8b5cf6"/><circle cx="106" cy="84" r="3" fill="#8b5cf6"/><circle cx="160" cy="66" r="3" fill="#8b5cf6"/><circle cx="213" cy="52" r="3" fill="#8b5cf6"/><circle cx="266" cy="40" r="3" fill="#8b5cf6"/><circle cx="320" cy="34" r="3.6" fill="#8b5cf6"/>
+          </svg>
+          <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--faint);margin-top:.25rem"><span>2024</span><span>Q3</span><span>Q4</span><span>Q1</span><span>Q2</span><span>Jul</span><span>Aug</span></div>
+          <div style="display:flex;gap:1.3rem;margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--line)">
+            <div><div style="font-size:.63rem;color:var(--muted);font-weight:600">Joined YTD</div><div style="font-family:var(--fd);font-weight:800;font-size:.95rem" class="tn">+7</div></div>
+            <div><div style="font-size:.63rem;color:var(--muted);font-weight:600">Exits YTD</div><div style="font-family:var(--fd);font-weight:800;font-size:.95rem" class="tn">2</div></div>
+            <div><div style="font-size:.63rem;color:var(--muted);font-weight:600">Net growth</div><div style="font-family:var(--fd);font-weight:800;font-size:.95rem;color:var(--em-d)">+38%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="g3">
+      <!-- Department Distribution -->
+      <div class="card">
+        <div class="ch"><h3 style="--t:var(--cy-t);--ti:#0e7490"><span class="hi">◔</span>Department Distribution</h3></div>
+        <div style="padding:.85rem;display:flex;flex-direction:column;align-items:center;gap:.7rem">
+          <svg width="118" height="118" viewBox="0 0 42 42">
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#eef0f4" stroke-width="7"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#059669" stroke-width="7" stroke-dasharray="39 100" stroke-dashoffset="25"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#3b82f6" stroke-width="7" stroke-dasharray="28 100" stroke-dashoffset="-14"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#8b5cf6" stroke-width="7" stroke-dasharray="17 100" stroke-dashoffset="-42"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#f59e0b" stroke-width="7" stroke-dasharray="11 100" stroke-dashoffset="-59"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#06b6d4" stroke-width="7" stroke-dasharray="5 100" stroke-dashoffset="-70"/>
+            <text x="21" y="20.5" text-anchor="middle" font-size="6.5" font-weight="800" fill="#0d1626" font-family="Plus Jakarta Sans">18</text>
+            <text x="21" y="25" text-anchor="middle" font-size="2.9" fill="#7a8494" font-family="Inter">STAFF</text>
+          </svg>
+          <div style="width:100%;display:flex;flex-direction:column;gap:.3rem;font-size:.71rem">
+            <div style="display:flex;align-items:center;gap:.4rem"><span style="width:7px;height:7px;border-radius:2px;background:#059669"></span>Core Ops<b class="tn" style="margin-left:auto">7</b></div>
+            <div style="display:flex;align-items:center;gap:.4rem"><span style="width:7px;height:7px;border-radius:2px;background:#3b82f6"></span>Field / Technical<b class="tn" style="margin-left:auto">5</b></div>
+            <div style="display:flex;align-items:center;gap:.4rem"><span style="width:7px;height:7px;border-radius:2px;background:#8b5cf6"></span>Human Resources<b class="tn" style="margin-left:auto">3</b></div>
+            <div style="display:flex;align-items:center;gap:.4rem"><span style="width:7px;height:7px;border-radius:2px;background:#f59e0b"></span>Finance<b class="tn" style="margin-left:auto">2</b></div>
+            <div style="display:flex;align-items:center;gap:.4rem"><span style="width:7px;height:7px;border-radius:2px;background:#06b6d4"></span>Interns<b class="tn" style="margin-left:auto">1</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HR ALERTS & EVENTS -->
+      <div class="card">
+        <div class="ch"><h3 style="--t:var(--am-t);--ti:#b45309"><span class="hi">🔔</span>HR Alerts &amp; Events</h3><span class="mt">Next 30 days</span></div>
+        <div>
+          <div class="al" style="--t:var(--ro-t);--ti:#be123c"><div class="ai">◈</div><div><div class="t1">Advance awaiting decision</div><div class="t2">Ben Ten · UGX 600,000</div></div><div class="rt ur">2 days</div></div>
+          <div class="al" style="--t:var(--am-t);--ti:#b45309"><div class="ai">▤</div><div><div class="t1">Contract ending soon</div><div class="t2">Angella Auma Abwot · Intern</div></div><div class="rt ur">18 Aug</div></div>
+          <div class="al" style="--t:var(--pk-t);--ti:#be185d"><div class="ai">🎁</div><div><div class="t1">Birthday</div><div class="t2">Araafat Kimera · Driver</div></div><div class="rt">11 Aug</div></div>
+          <div class="al" style="--t:var(--bl-t);--ti:#1d4ed8"><div class="ai">◔</div><div><div class="t1">Probation review due</div><div class="t2">Brian Atuhura · Electrical Tech</div></div><div class="rt">22 Aug</div></div>
+          <div class="al" style="--t:var(--vi-t);--ti:#6d28d9"><div class="ai">▩</div><div><div class="t1">Certification expiring</div><div class="t2">Bin'Latif Magola · Work at Height</div></div><div class="rt">29 Aug</div></div>
+          <div class="al" style="--t:var(--em-t);--ti:var(--em-d)"><div class="ai">◍</div><div><div class="t1">Work anniversary</div><div class="t2">Testing Vitu · 2 years</div></div><div class="rt">3 Sep</div></div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS + RECENT RUNS -->
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div class="card">
+          <div class="ch"><h3 style="--t:var(--em-t);--ti:var(--em-d)"><span class="hi">⚡</span>Quick Actions</h3></div>
+          <div style="padding:.6rem .7rem">
+            <div class="qa" style="--t:var(--vi-t);--ti:#6d28d9"><div class="qi">◍</div><div><div class="q1">Add New Employee</div><div class="q2">Onboard a team member</div></div><span class="ar">›</span></div>
+            <div class="qa" style="--t:var(--bl-t);--ti:#1d4ed8"><div class="qi">▤</div><div><div class="q1">Log Leave / Day Off</div><div class="q2">Record time off on the calendar</div></div><span class="ar">›</span></div>
+            <div class="qa" style="--t:var(--em-t);--ti:var(--em-d)"><div class="qi">▣</div><div><div class="q1">Run Payroll</div><div class="q2">Process salaries &amp; deductions</div></div><span class="ar">›</span></div>
+            <div class="qa" style="--t:var(--ro-t);--ti:#be123c"><div class="qi">◈</div><div><div class="q1">Record Staff Advance</div><div class="q2">2 active advances</div></div><span class="ar">›</span></div>
+            <div class="qa" style="--t:var(--am-t);--ti:#b45309;margin-bottom:0"><div class="qi">◎</div><div><div class="q1">Review Performance</div><div class="q2">3 pending reviews</div></div><span class="ar">›</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><h3 style="--t:var(--em-t);--ti:var(--em-d)"><span class="hi">▣</span>Recent Payroll Runs</h3><span class="mt">View all ›</span></div>
+          <div>
+            <div class="pr"><div><div class="p1">July 2026</div><div class="p2">Run 1 · regular · 01/08/2026</div></div><span class="pl ps" style="margin-left:auto">Approved</span></div>
+            <div class="pr"><div><div class="p1">June 2026</div><div class="p2">Run 1 · regular · 01/07/2026</div></div><span class="pl ps" style="margin-left:auto">Approved</span></div>
+            <div class="pr"><div><div class="p1">May 2026</div><div class="p2">Run 1 · regular · 01/06/2026</div></div><span class="pl ps" style="margin-left:auto">Approved</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div></body></html>
