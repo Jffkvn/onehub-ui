@@ -10,7 +10,7 @@ import { useAuth } from '@/modules/auth/AuthProvider'
 import { isItemPermitted, NAV_ITEMS } from '@/config/navigation'
 import { MOCK_ROLE_PERMISSIONS } from '@/components/patterns/DevRoleSwitcher'
 
-// Lazy-loaded pages
+// Lazy-loaded Auth & System pages
 const LoginPage = lazy(() =>
   import('@/modules/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
 )
@@ -31,6 +31,28 @@ const NotFoundPage = lazy(() =>
 )
 const ShowcasePage = lazy(() =>
   import('@/pages/Showcase').then((m) => ({ default: m.ShowcasePage })),
+)
+
+// Lazy-loaded Payroll Module pages (TASK-04)
+const PayrollRunsPage = lazy(() =>
+  import('@/modules/payroll/pages/PayrollRunsPage').then((m) => ({
+    default: m.PayrollRunsPage,
+  })),
+)
+const PayrollRunDetailPage = lazy(() =>
+  import('@/modules/payroll/pages/PayrollRunDetailPage').then((m) => ({
+    default: m.PayrollRunDetailPage,
+  })),
+)
+const StatutoryExportsPage = lazy(() =>
+  import('@/modules/payroll/pages/StatutoryExportsPage').then((m) => ({
+    default: m.StatutoryExportsPage,
+  })),
+)
+const DeductionsAdjustmentsPage = lazy(() =>
+  import('@/modules/payroll/pages/DeductionsAdjustmentsPage').then((m) => ({
+    default: m.DeductionsAdjustmentsPage,
+  })),
 )
 
 function RouteLoadingFallback() {
@@ -70,18 +92,19 @@ function ProtectedShellLayout() {
             <Route path="/people/pay-grades" element={<PagePlaceholder title="Pay Grades & Setup" task="TASK-05" />} />
           </Route>
 
-          {/* Finance */}
+          {/* Finance — Payroll Module (TASK-04) */}
           <Route element={<RequirePermission permission="payroll.read" />}>
-            <Route path="/finance/payroll" element={<PagePlaceholder title="Payroll Runs" task="TASK-04" />} />
+            <Route path="/finance/payroll" element={<PayrollRunsPage />} />
+            <Route path="/finance/payroll/:id" element={<PayrollRunDetailPage />} />
           </Route>
           <Route element={<RequirePermission permission="staff_advances.manage" />}>
-            <Route path="/finance/advances" element={<PagePlaceholder title="Staff Advances" task="TASK-04" />} />
+            <Route path="/finance/advances" element={<PagePlaceholder title="Staff Advances" task="TASK-05" />} />
           </Route>
           <Route element={<RequirePermission permission="payroll.prepare" />}>
-            <Route path="/finance/deductions" element={<PagePlaceholder title="Deductions & Adjustments" task="TASK-04" />} />
+            <Route path="/finance/deductions" element={<DeductionsAdjustmentsPage />} />
           </Route>
           <Route element={<RequirePermission permission="payroll.export" />}>
-            <Route path="/finance/exports" element={<PagePlaceholder title="Statutory Exports" task="TASK-04" />} />
+            <Route path="/finance/exports" element={<StatutoryExportsPage />} />
           </Route>
 
           {/* Operations */}
