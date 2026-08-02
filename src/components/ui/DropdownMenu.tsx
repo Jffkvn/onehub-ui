@@ -33,7 +33,7 @@ export function DropdownMenu({
           align={align}
           sideOffset={4}
           className={cn(
-            'z-overlay min-w-[160px] overflow-hidden rounded-md border border-line bg-surface p-1 shadow-md animate-in fade-in-80 slide-in-from-top-1 dark:bg-surface dark:text-ink',
+            'z-overlay min-w-[160px] overflow-hidden rounded-md border border-line bg-surface p-1 shadow-md animate-in fade-in-80 slide-in-from-top-1',
             className,
           )}
         >
@@ -45,7 +45,7 @@ export function DropdownMenu({
               className={cn(
                 'flex cursor-pointer select-none items-center gap-2 rounded-sm px-2.5 py-1.5 text-xs transition-colors focus:bg-line/40 focus:outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                 item.danger
-                  ? 'text-rose hover:bg-rose-tint dark:hover:bg-rose-tint'
+                  ? 'text-rose hover:bg-rose-tint'
                   : 'text-soft hover:text-ink hover:bg-line/40',
               )}
             >

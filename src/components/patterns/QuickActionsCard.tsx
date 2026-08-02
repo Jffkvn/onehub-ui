@@ -26,7 +26,7 @@ export function QuickActionsCard({
   return (
     <div
       className={cn(
-        'rounded-lg border border-line bg-surface p-5 shadow-xs dark:bg-surface dark:text-ink',
+        'rounded-lg border border-line bg-surface p-5 shadow-xs',
         className,
       )}
     >
@@ -45,7 +45,7 @@ export function QuickActionsCard({
             <div className="flex items-center gap-3">
               <IconChip tone={item.tone || 'emerald'} size="sm" icon={item.icon} />
               <div>
-                <p className="font-body text-xs font-semibold text-ink group-hover:text-emerald-600 dark:group-hover:text-emerald transition-colors">
+                <p className="font-body text-xs font-semibold text-ink group-hover:text-emerald-600 transition-colors">
                   {item.label}
                 </p>
                 <p className="font-body text-[11px] text-muted">{item.subtitle}</p>

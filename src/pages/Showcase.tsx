@@ -442,7 +442,7 @@ export function ShowcasePage() {
           </section>
 
           {/* Toggles & Checkboxes Primitive Demo */}
-          <section className="space-y-3 rounded-lg border border-line bg-surface p-5 dark:bg-surface">
+          <section className="space-y-3 rounded-lg border border-line bg-surface p-5">
             <h3 className="font-display text-xs font-bold text-ink uppercase tracking-wider border-b border-line pb-2">
               Toggle Primitives
             </h3>
@@ -466,7 +466,7 @@ export function ShowcasePage() {
       </div>
 
       {/* Button Variants & Status Pills Palette */}
-      <section className="space-y-4 rounded-lg border border-line bg-surface p-6 dark:bg-surface">
+      <section className="space-y-4 rounded-lg border border-line bg-surface p-6">
         <h2 className="font-display text-sm font-bold uppercase tracking-wider text-muted">
           6. Button Primitive Matrix &amp; Status Pills
         </h2>
@@ -496,13 +496,13 @@ export function ShowcasePage() {
       </section>
 
       {/* Tabs & Tooltip Primitive Demo */}
-      <section className="space-y-4 rounded-lg border border-line bg-surface p-6 dark:bg-surface">
+      <section className="space-y-4 rounded-lg border border-line bg-surface p-6">
         <h2 className="font-display text-sm font-bold uppercase tracking-wider text-muted">
           7. Tabs Sub-section &amp; Tooltip Primitives
         </h2>
         <div className="flex items-center gap-4 mb-2">
           <Tooltip content="Tooltip primitive with arrow anchor">
-            <span className="cursor-help font-body text-xs font-semibold text-emerald-600 dark:text-emerald underline underline-offset-4">
+            <span className="cursor-help font-body text-xs font-semibold text-emerald-600 underline underline-offset-4">
               Hover for Tooltip
             </span>
           </Tooltip>

@@ -48,7 +48,7 @@ export function DetailSlideOver({
     >
       {/* Summary Stat Grid */}
       {stats && stats.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 rounded-lg border border-line bg-canvas/60 p-4 dark:bg-canvas/60">
+        <div className="grid grid-cols-2 gap-3 rounded-lg border border-line bg-canvas/60 p-4">
           {stats.map((stat, idx) => (
             <div key={idx}>
               <p className="font-body text-[11px] font-medium text-muted">{stat.label}</p>
@@ -66,7 +66,7 @@ export function DetailSlideOver({
           <h4 className="font-display text-xs font-bold text-muted uppercase tracking-wider">
             {sec.title}
           </h4>
-          <div className="rounded-lg border border-line bg-surface p-4 text-xs text-soft dark:bg-surface">
+          <div className="rounded-lg border border-line bg-surface p-4 text-xs text-soft">
             {sec.content}
           </div>
         </div>

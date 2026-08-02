@@ -40,7 +40,7 @@ export function Select({
     >
       <RadixSelect.Trigger
         className={cn(
-          'flex h-10 w-full items-center justify-between rounded-md border bg-surface px-3 py-2 text-sm text-ink ring-offset-canvas transition-colors placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-surface dark:text-ink',
+          'flex h-10 w-full items-center justify-between rounded-md border bg-surface px-3 py-2 text-sm text-ink ring-offset-canvas transition-colors placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50',
           isError ? 'border-rose focus:ring-rose' : 'border-line focus:border-emerald',
           className,
         )}
@@ -52,7 +52,7 @@ export function Select({
       </RadixSelect.Trigger>
 
       <RadixSelect.Portal>
-        <RadixSelect.Content className="z-overlay min-w-[8rem] overflow-hidden rounded-md border border-line bg-surface text-ink shadow-md animate-in fade-in-80 slide-in-from-top-1 dark:bg-surface dark:text-ink">
+        <RadixSelect.Content className="z-overlay min-w-[8rem] overflow-hidden rounded-md border border-line bg-surface text-ink shadow-md animate-in fade-in-80 slide-in-from-top-1">
           <RadixSelect.ScrollUpButton className="flex h-6 items-center justify-center bg-surface text-muted">
             <ChevronUp className="h-4 w-4" />
           </RadixSelect.ScrollUpButton>

@@ -60,13 +60,13 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        'w-full overflow-x-auto rounded-lg border border-line bg-surface shadow-xs dark:bg-surface dark:text-ink',
+        'w-full overflow-x-auto rounded-lg border border-line bg-surface shadow-xs',
         className,
       )}
     >
       <table className="w-full text-left text-xs border-collapse">
         {/* Sticky Header */}
-        <thead className="sticky top-0 z-10 bg-canvas/80 font-body font-semibold uppercase tracking-wider text-muted backdrop-blur-xs border-b border-line dark:bg-canvas/80">
+        <thead className="sticky top-0 z-10 bg-canvas/80 font-body font-semibold uppercase tracking-wider text-muted backdrop-blur-xs border-b border-line">
           <tr>
             {columns.map((col) => (
               <th
@@ -93,7 +93,7 @@ export function DataTable<T>({
                 key={key}
                 onClick={() => onRowClick?.(row)}
                 className={cn(
-                  'transition-colors hover:bg-line/20 dark:hover:bg-line/10',
+                  'transition-colors hover:bg-line/20',
                   onRowClick && 'cursor-pointer',
                 )}
               >
@@ -122,7 +122,7 @@ export function DataTable<T>({
 
         {/* Optional Totals Footer */}
         {totalsRow && (
-          <tfoot className="border-t-2 border-line bg-canvas/60 font-body font-bold text-ink dark:bg-canvas/60">
+          <tfoot className="border-t-2 border-line bg-canvas/60 font-body font-bold text-ink">
             <tr>
               {columns.map((col) => (
                 <td

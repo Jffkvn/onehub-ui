@@ -5,55 +5,55 @@ const config: Config = {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
-      // ─── Colour palette (PLAN.md §2) ────────────────────────────────────
+      // ─── Colour palette (PLAN.md §2 & TASK-02b RGB variables) ────────────
       colors: {
         // Layout
-        sidebar:  '#0e1626',
-        canvas:   '#f5f6f8',
-        surface:  '#ffffff',
-        line:     '#e7e9ee',
+        sidebar: 'rgb(var(--color-sidebar) / <alpha-value>)',
+        canvas:  'rgb(var(--color-canvas)  / <alpha-value>)',
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        line:    'rgb(var(--color-line)    / <alpha-value>)',
 
         // Text
-        ink:      '#0d1626',
-        soft:     '#3d4757',
-        muted:    '#7a8494',
-        faint:    '#a3abb8',
+        ink:   'rgb(var(--color-ink)   / <alpha-value>)',
+        soft:  'rgb(var(--color-soft)  / <alpha-value>)',
+        muted: 'rgb(var(--color-muted) / <alpha-value>)',
+        faint: 'rgb(var(--color-faint) / <alpha-value>)',
 
         // Brand — emerald (primary / Payroll)
         emerald: {
-          DEFAULT: '#00c08b',
-          600:     '#059669',
-          tint:    '#e3f9f1',
+          DEFAULT: 'rgb(var(--color-emerald)      / <alpha-value>)',
+          600:     'rgb(var(--color-emerald-600)  / <alpha-value>)',
+          tint:    'rgb(var(--color-emerald-tint) / <alpha-value>)',
         },
 
         // Accent — violet (People / HR)
         violet: {
-          DEFAULT: '#8b5cf6',
-          tint:    '#f2ecfe',
+          DEFAULT: 'rgb(var(--color-violet)      / <alpha-value>)',
+          tint:    'rgb(var(--color-violet-tint) / <alpha-value>)',
         },
 
         // Accent — blue (Inventory)
         blue: {
-          DEFAULT: '#3b82f6',
-          tint:    '#e9f1fe',
+          DEFAULT: 'rgb(var(--color-blue)      / <alpha-value>)',
+          tint:    'rgb(var(--color-blue-tint) / <alpha-value>)',
         },
 
         // Accent — amber (warning / waiting)
         amber: {
-          DEFAULT: '#f59e0b',
-          tint:    '#fef4e1',
+          DEFAULT: 'rgb(var(--color-amber)      / <alpha-value>)',
+          tint:    'rgb(var(--color-amber-tint) / <alpha-value>)',
         },
 
         // Accent — rose (danger / attention)
         rose: {
-          DEFAULT: '#f43f5e',
-          tint:    '#ffe9ed',
+          DEFAULT: 'rgb(var(--color-rose)      / <alpha-value>)',
+          tint:    'rgb(var(--color-rose-tint) / <alpha-value>)',
         },
 
         // Accent — cyan (workspace)
         cyan: {
-          DEFAULT: '#06b6d4',
-          tint:    '#e0f8fb',
+          DEFAULT: 'rgb(var(--color-cyan)      / <alpha-value>)',
+          tint:    'rgb(var(--color-cyan-tint) / <alpha-value>)',
         },
       },
 

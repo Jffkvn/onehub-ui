@@ -35,7 +35,7 @@ export function Dialog({
         {/* Modal Content */}
         <RadixDialog.Content
           className={cn(
-            'fixed left-[50%] top-[50%] z-sheet w-full max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border border-line bg-surface p-6 shadow-xl transition-all duration-200 animate-in fade-in-0 zoom-in-95 dark:bg-surface dark:text-ink',
+            'fixed left-[50%] top-[50%] z-sheet w-full max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border border-line bg-surface p-6 shadow-xl transition-all duration-200 animate-in fade-in-0 zoom-in-95',
             className,
           )}
         >

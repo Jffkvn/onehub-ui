@@ -9,11 +9,11 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          'bg-emerald text-white hover:-translate-y-[1px] hover:bg-emerald-600 hover:shadow-md dark:bg-emerald-600 dark:hover:bg-emerald',
+          'bg-emerald text-white hover:-translate-y-[1px] hover:bg-emerald-600 hover:shadow-md',
         secondary:
-          'bg-surface text-ink ring-1 ring-line hover:-translate-y-[1px] hover:bg-canvas hover:shadow-sm dark:bg-surface dark:hover:bg-line/40',
+          'bg-surface text-ink ring-1 ring-line hover:-translate-y-[1px] hover:bg-canvas hover:shadow-sm',
         ghost:
-          'text-soft hover:bg-line/50 hover:text-ink dark:text-soft dark:hover:bg-line/30 dark:hover:text-ink',
+          'text-soft hover:bg-line/50 hover:text-ink',
         danger:
           'bg-rose text-white hover:-translate-y-[1px] hover:bg-rose/90 hover:shadow-md',
         outline:

@@ -39,7 +39,7 @@ export function SlideOver({
         {/* Panel */}
         <RadixDialog.Content
           className={cn(
-            'fixed bottom-0 right-0 top-0 z-sheet flex w-full flex-col border-l border-line bg-surface shadow-2xl transition-transform duration-400 ease-[cubic-bezier(.32,.72,0,1)] animate-in slide-in-from-right dark:bg-surface dark:text-ink',
+            'fixed bottom-0 right-0 top-0 z-sheet flex w-full flex-col border-l border-line bg-surface shadow-2xl transition-transform duration-400 ease-[cubic-bezier(.32,.72,0,1)] animate-in slide-in-from-right',
             widthClass,
             className,
           )}
@@ -64,7 +64,7 @@ export function SlideOver({
 
           {/* Sticky Action Footer */}
           {footer && (
-            <div className="sticky bottom-0 border-t border-line bg-surface/95 p-4 backdrop-blur-sm dark:bg-surface/95">
+            <div className="sticky bottom-0 border-t border-line bg-surface/95 p-4 backdrop-blur-sm">
               <div className="flex items-center justify-end gap-3">{footer}</div>
             </div>
           )}

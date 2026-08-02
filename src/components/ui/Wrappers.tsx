@@ -36,7 +36,7 @@ export function Tabs({ defaultValue, value, onValueChange, tabs, className }: Ta
           <RadixTabs.Trigger
             key={tab.value}
             value={tab.value}
-            className="flex items-center gap-2 border-b-2 border-transparent pb-2.5 pt-1 text-sm font-medium text-muted transition-colors hover:text-ink data-[state=active]:border-emerald data-[state=active]:text-emerald-600 dark:data-[state=active]:text-emerald focus:outline-none"
+            className="flex items-center gap-2 border-b-2 border-transparent pb-2.5 pt-1 text-sm font-medium text-muted transition-colors hover:text-ink data-[state=active]:border-emerald data-[state=active]:text-emerald-600 focus:outline-none"
           >
             <span>{tab.label}</span>
             {tab.badge}
@@ -70,10 +70,10 @@ export function Tooltip({ content, children, side = 'top', align = 'center' }: T
             side={side}
             align={align}
             sideOffset={4}
-            className="z-overlay rounded bg-sidebar px-2.5 py-1 text-xs text-white shadow-md animate-in fade-in-80 dark:bg-surface dark:text-ink dark:border dark:border-line"
+            className="z-overlay rounded bg-sidebar px-2.5 py-1 text-xs text-white shadow-md animate-in fade-in-80"
           >
             {content}
-            <RadixTooltip.Arrow className="fill-sidebar dark:fill-surface" />
+            <RadixTooltip.Arrow className="fill-sidebar" />
           </RadixTooltip.Content>
         </RadixTooltip.Portal>
       </RadixTooltip.Root>
@@ -113,7 +113,7 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
       )}
     >
       <RadixAvatar.Image src={src} alt={name} className="h-full w-full object-cover" />
-      <RadixAvatar.Fallback className="flex h-full w-full items-center justify-center bg-violet-tint text-violet dark:bg-violet-tint dark:text-violet">
+      <RadixAvatar.Fallback className="flex h-full w-full items-center justify-center bg-violet-tint text-violet">
         {initials || '?'}
       </RadixAvatar.Fallback>
     </RadixAvatar.Root>
@@ -136,7 +136,7 @@ export function ScrollArea({ children, className, ...props }: ScrollAreaProps) {
         orientation="vertical"
         className="flex touch-none select-none transition-colors p-0.5 bg-transparent hover:bg-line/20 w-2.5"
       >
-        <RadixScrollArea.Thumb className="relative flex-1 rounded-full bg-line/60 dark:bg-line/40" />
+        <RadixScrollArea.Thumb className="relative flex-1 rounded-full bg-line/60" />
       </RadixScrollArea.Scrollbar>
     </RadixScrollArea.Root>
   )

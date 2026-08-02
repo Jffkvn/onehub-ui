@@ -31,7 +31,7 @@ export function AlertsCard({
   return (
     <div
       className={cn(
-        'rounded-lg border border-line bg-surface p-5 shadow-xs dark:bg-surface dark:text-ink',
+        'rounded-lg border border-line bg-surface p-5 shadow-xs',
         className,
       )}
     >

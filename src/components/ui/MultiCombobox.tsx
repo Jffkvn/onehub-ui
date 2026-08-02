@@ -65,7 +65,7 @@ export function MultiCombobox({
           tabIndex={disabled ? -1 : 0}
           aria-expanded={open}
           className={cn(
-            'flex min-h-[40px] w-full cursor-pointer flex-wrap items-center justify-between gap-1.5 rounded-md border bg-surface p-1.5 text-sm text-ink ring-offset-canvas transition-colors focus-within:ring-2 focus-within:ring-emerald focus-within:ring-offset-1 dark:bg-surface dark:text-ink',
+            'flex min-h-[40px] w-full cursor-pointer flex-wrap items-center justify-between gap-1.5 rounded-md border bg-surface p-1.5 text-sm text-ink ring-offset-canvas transition-colors focus-within:ring-2 focus-within:ring-emerald focus-within:ring-offset-1',
             error ? 'border-rose focus-within:ring-rose' : 'border-line focus-within:border-emerald',
             disabled && 'cursor-not-allowed opacity-50',
             className,
@@ -80,7 +80,7 @@ export function MultiCombobox({
                 return (
                   <span
                     key={val}
-                    className="inline-flex items-center gap-1 rounded bg-emerald-tint px-2 py-0.5 text-xs font-medium text-emerald-600 dark:bg-emerald-tint dark:text-emerald"
+                    className="inline-flex items-center gap-1 rounded bg-emerald-tint px-2 py-0.5 text-xs font-medium text-emerald-600"
                   >
                     <span>{option ? option.label : val}</span>
                     <button
@@ -111,7 +111,7 @@ export function MultiCombobox({
         <Popover.Content
           align="start"
           sideOffset={4}
-          className="z-overlay w-[var(--radix-popover-trigger-width)] min-w-[200px] overflow-hidden rounded-md border border-line bg-surface p-1 shadow-md animate-in fade-in-80 slide-in-from-top-1 dark:bg-surface dark:text-ink"
+          className="z-overlay w-[var(--radix-popover-trigger-width)] min-w-[200px] overflow-hidden rounded-md border border-line bg-surface p-1 shadow-md animate-in fade-in-80 slide-in-from-top-1"
         >
           <div className="flex items-center border-b border-line px-2 pb-1.5 pt-1">
             <Search className="mr-2 h-4 w-4 text-muted shrink-0" />
@@ -137,7 +137,7 @@ export function MultiCombobox({
                     onClick={() => toggleValue(opt.value)}
                     className={cn(
                       'flex w-full cursor-pointer items-center justify-between rounded-sm px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-line/40 focus:bg-line/40 focus:outline-none',
-                      isSelected ? 'font-medium text-emerald-600 dark:text-emerald' : 'text-soft',
+                      isSelected ? 'font-medium text-emerald-600' : 'text-soft',
                     )}
                   >
                     <span>{opt.label}</span>

@@ -7,12 +7,12 @@ export const statusPillVariants = cva(
   {
     variants: {
       tone: {
-        success: 'bg-emerald-tint text-emerald-600 dark:bg-emerald-tint dark:text-emerald',
-        warning: 'bg-amber-tint text-amber dark:bg-amber-tint dark:text-amber',
-        danger:  'bg-rose-tint text-rose dark:bg-rose-tint dark:text-rose',
-        info:    'bg-blue-tint text-blue dark:bg-blue-tint dark:text-blue',
-        violet:  'bg-violet-tint text-violet dark:bg-violet-tint dark:text-violet',
-        neutral: 'bg-line/60 text-soft dark:bg-line/30 dark:text-soft',
+        success: 'bg-emerald-tint text-emerald-600',
+        warning: 'bg-amber-tint text-amber',
+        danger:  'bg-rose-tint text-rose',
+        info:    'bg-blue-tint text-blue',
+        violet:  'bg-violet-tint text-violet',
+        neutral: 'bg-line/60 text-soft',
       },
       size: {
         sm: 'px-2 py-0.5 text-[11px] leading-4 gap-1',
@@ -28,7 +28,7 @@ export const statusPillVariants = cva(
 )
 
 const dotColors = {
-  success: 'bg-emerald-600 dark:bg-emerald',
+  success: 'bg-emerald-600',
   warning: 'bg-amber',
   danger:  'bg-rose',
   info:    'bg-blue',

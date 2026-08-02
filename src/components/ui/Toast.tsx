@@ -54,7 +54,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             className={cn(
-              'pointer-events-auto flex w-80 items-start gap-3 rounded-lg border border-line bg-surface p-3.5 shadow-xl transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-5 dark:bg-surface dark:text-ink',
+              'pointer-events-auto flex w-80 items-start gap-3 rounded-lg border border-line bg-surface p-3.5 shadow-xl transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-5',
             )}
           >
             {t.tone === 'success' && <CheckCircle2 className="h-5 w-5 text-emerald shrink-0 mt-0.5" />}

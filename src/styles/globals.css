@@ -2,50 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Motion easing tokens ─────────────────────────────────────────────────
-   Approved via design/motion-study.html (PLAN.md §6).
-   CSS `transform`/`opacity` only — no JS animation loops.
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─── Motion easing tokens (PLAN.md §6) ──────────────────────────────────── */
 :root {
   --exp:   cubic-bezier(.16, 1, .3, 1);    /* staggered entrance */
   --micro: cubic-bezier(.4, 0, .2, 1);     /* hover / press      */
   --sheet: cubic-bezier(.32, .72, 0, 1);   /* slide-over open    */
 
-  /* ─── Light-mode colour tokens ─────────────────────────────────────── */
-  --color-sidebar:  #0e1626;
-  --color-canvas:   #f5f6f8;
-  --color-surface:  #ffffff;
-  --color-line:     #e7e9ee;
+  /* ─── Light-mode colour tokens (Space-separated RGB triplets) ───────── */
+  --color-sidebar: 14 22 38;
+  --color-canvas:  245 246 248;
+  --color-surface: 255 255 255;
+  --color-line:    231 233 238;
 
-  --color-ink:      #0d1626;
-  --color-soft:     #3d4757;
-  --color-muted:    #7a8494;
-  --color-faint:    #a3abb8;
+  --color-ink:   13 22 38;
+  --color-soft:  61 71 87;
+  --color-muted: 122 132 148;
+  --color-faint: 163 171 184;
 
   /* Emerald — primary / Payroll */
-  --color-emerald:       #00c08b;
-  --color-emerald-600:   #059669;
-  --color-emerald-tint:  #e3f9f1;
+  --color-emerald:      0 192 139;
+  --color-emerald-600:  5 150 105;
+  --color-emerald-tint: 227 249 241;
 
   /* Violet — People / HR */
-  --color-violet:        #8b5cf6;
-  --color-violet-tint:   #f2ecfe;
+  --color-violet:      139 92 246;
+  --color-violet-tint: 242 236 254;
 
   /* Blue — Inventory */
-  --color-blue:          #3b82f6;
-  --color-blue-tint:     #e9f1fe;
+  --color-blue:      59 130 246;
+  --color-blue-tint: 233 241 254;
 
   /* Amber — warning / waiting */
-  --color-amber:         #f59e0b;
-  --color-amber-tint:    #fef4e1;
+  --color-amber:      245 158 11;
+  --color-amber-tint: 254 244 225;
 
   /* Rose — danger / attention */
-  --color-rose:          #f43f5e;
-  --color-rose-tint:     #ffe9ed;
+  --color-rose:      244 63 94;
+  --color-rose-tint: 255 233 237;
 
   /* Cyan — workspace */
-  --color-cyan:          #06b6d4;
-  --color-cyan-tint:     #e0f8fb;
+  --color-cyan:      6 182 212;
+  --color-cyan-tint: 224 248 251;
 
   /* ─── Radius scale ──────────────────────────────────────────────────── */
   --radius-sm: 8px;
@@ -56,21 +53,21 @@
 
 /* ─── Dark-mode overrides ───────────────────────────────────────────────── */
 .dark {
-  --color-canvas:   #0d1626;
-  --color-surface:  #131f35;
-  --color-line:     #1e2c43;
+  --color-canvas:  13 22 38;
+  --color-surface: 19 31 53;
+  --color-line:    30 44 67;
 
-  --color-ink:      #e8ecf4;
-  --color-soft:     #a8b4c8;
-  --color-muted:    #6b7a91;
-  --color-faint:    #3d4f68;
+  --color-ink:   232 236 244;
+  --color-soft:  168 180 200;
+  --color-muted: 107 122 145;
+  --color-faint: 61 79 104;
 
-  --color-emerald-tint: #02281e;
-  --color-violet-tint:  #1f1438;
-  --color-blue-tint:    #0e1e38;
-  --color-amber-tint:   #2a1e06;
-  --color-rose-tint:    #2a0a12;
-  --color-cyan-tint:    #061e28;
+  --color-emerald-tint: 2 40 30;
+  --color-violet-tint:  31 20 56;
+  --color-blue-tint:    14 30 56;
+  --color-amber-tint:   42 30 6;
+  --color-rose-tint:    42 10 18;
+  --color-cyan-tint:    6 30 40;
 }
 
 /* ─── Baseline typography ───────────────────────────────────────────────── */

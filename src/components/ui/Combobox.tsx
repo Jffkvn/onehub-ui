@@ -58,7 +58,7 @@ export function Combobox({
           disabled={disabled}
           aria-expanded={open}
           className={cn(
-            'flex h-10 w-full items-center justify-between rounded-md border bg-surface px-3 py-2 text-sm text-ink ring-offset-canvas transition-colors focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-surface dark:text-ink',
+            'flex h-10 w-full items-center justify-between rounded-md border bg-surface px-3 py-2 text-sm text-ink ring-offset-canvas transition-colors focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50',
             error ? 'border-rose focus:ring-rose' : 'border-line focus:border-emerald',
             className,
           )}
@@ -74,7 +74,7 @@ export function Combobox({
         <Popover.Content
           align="start"
           sideOffset={4}
-          className="z-overlay w-[var(--radix-popover-trigger-width)] min-w-[200px] overflow-hidden rounded-md border border-line bg-surface p-1 shadow-md animate-in fade-in-80 slide-in-from-top-1 dark:bg-surface dark:text-ink"
+          className="z-overlay w-[var(--radix-popover-trigger-width)] min-w-[200px] overflow-hidden rounded-md border border-line bg-surface p-1 shadow-md animate-in fade-in-80 slide-in-from-top-1"
         >
           {/* Search Header */}
           <div className="flex items-center border-b border-line px-2 pb-1.5 pt-1">
@@ -106,7 +106,7 @@ export function Combobox({
                     }}
                     className={cn(
                       'flex w-full cursor-pointer items-center justify-between rounded-sm px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-line/40 focus:bg-line/40 focus:outline-none',
-                      isSelected ? 'font-medium text-emerald-600 dark:text-emerald' : 'text-soft',
+                      isSelected ? 'font-medium text-emerald-600' : 'text-soft',
                     )}
                   >
                     <div>

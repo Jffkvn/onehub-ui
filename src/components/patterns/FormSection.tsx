@@ -24,7 +24,7 @@ export function FormSection({
   className,
 }: FormSectionProps) {
   return (
-    <div className={cn('space-y-4 rounded-lg border border-line bg-surface p-6 shadow-xs dark:bg-surface dark:text-ink', className)}>
+    <div className={cn('space-y-4 rounded-lg border border-line bg-surface p-6 shadow-xs', className)}>
       <div className="border-b border-line pb-3">
         <h3 className="font-display text-sm font-bold text-ink">{title}</h3>
         {description && (

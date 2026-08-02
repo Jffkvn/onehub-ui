@@ -15,7 +15,7 @@ export const Checkbox = React.forwardRef<
   React.ElementRef<typeof RadixCheckbox.Root>,
   CheckboxProps
 >(({ className, label, ...props }, ref) => (
-  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-soft dark:text-soft select-none">
+  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-soft select-none">
     <RadixCheckbox.Root
       ref={ref}
       className={cn(
@@ -43,7 +43,7 @@ export const Switch = React.forwardRef<
   React.ElementRef<typeof RadixSwitch.Root>,
   SwitchProps
 >(({ className, label, ...props }, ref) => (
-  <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm text-soft dark:text-soft select-none">
+  <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm text-soft select-none">
     <RadixSwitch.Root
       ref={ref}
       className={cn(

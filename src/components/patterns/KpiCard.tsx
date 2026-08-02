@@ -46,7 +46,7 @@ export function KpiCard({
     <div
       onClick={onClick}
       className={cn(
-        'group flex flex-col justify-between rounded-lg border border-line bg-surface p-5 shadow-xs transition-all duration-200 hover:-translate-y-[3px] hover:shadow-md dark:bg-surface dark:text-ink',
+        'group flex flex-col justify-between rounded-lg border border-line bg-surface p-5 shadow-xs transition-all duration-200 hover:-translate-y-[3px] hover:shadow-md',
         onClick && 'cursor-pointer',
         className,
       )}

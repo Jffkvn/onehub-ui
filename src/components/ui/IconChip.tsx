@@ -7,13 +7,13 @@ export const iconChipVariants = cva(
   {
     variants: {
       tone: {
-        emerald: 'bg-emerald-tint text-emerald-600 dark:bg-emerald-tint dark:text-emerald',
-        violet:  'bg-violet-tint text-violet dark:bg-violet-tint dark:text-violet',
-        blue:    'bg-blue-tint text-blue dark:bg-blue-tint dark:text-blue',
-        amber:   'bg-amber-tint text-amber dark:bg-amber-tint dark:text-amber',
-        rose:    'bg-rose-tint text-rose dark:bg-rose-tint dark:text-rose',
-        cyan:    'bg-cyan-tint text-cyan dark:bg-cyan-tint dark:text-cyan',
-        neutral: 'bg-line/40 text-soft dark:bg-line/20 dark:text-muted',
+        emerald: 'bg-emerald-tint text-emerald-600',
+        violet:  'bg-violet-tint text-violet',
+        blue:    'bg-blue-tint text-blue',
+        amber:   'bg-amber-tint text-amber',
+        rose:    'bg-rose-tint text-rose',
+        cyan:    'bg-cyan-tint text-cyan',
+        neutral: 'bg-line/40 text-soft',
       },
       size: {
         sm: 'h-8 w-8 text-sm p-1.5',

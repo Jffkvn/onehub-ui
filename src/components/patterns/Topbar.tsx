@@ -27,7 +27,7 @@ export function Topbar({
   return (
     <header
       className={cn(
-        'sticky top-0 z-topbar flex h-16 w-full items-center justify-between border-b border-line bg-surface/95 px-6 backdrop-blur-md dark:bg-surface/95 dark:text-ink',
+        'sticky top-0 z-topbar flex h-16 w-full items-center justify-between border-b border-line bg-surface/95 px-6 backdrop-blur-md',
         className,
       )}
     >
@@ -48,7 +48,7 @@ export function Topbar({
             type="text"
             placeholder="Search employees, payroll runs, inventory..."
             onChange={(e) => onSearchChange?.(e.target.value)}
-            className="h-9 w-full rounded-md border border-line bg-canvas pl-9 pr-4 text-xs text-ink placeholder:text-muted focus:border-emerald focus:bg-surface focus:outline-none focus:ring-1 focus:ring-emerald dark:bg-canvas dark:text-ink"
+            className="h-9 w-full rounded-md border border-line bg-canvas pl-9 pr-4 text-xs text-ink placeholder:text-muted focus:border-emerald focus:bg-surface focus:outline-none focus:ring-1 focus:ring-emerald"
           />
         </div>
       </div>

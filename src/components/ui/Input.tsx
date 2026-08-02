@@ -64,7 +64,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           disabled={disabled}
           aria-invalid={isError ? 'true' : undefined}
           className={cn(
-            'flex h-10 w-full rounded-md border bg-surface px-3 py-2 text-sm text-ink ring-offset-canvas transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-surface dark:text-ink',
+            'flex h-10 w-full rounded-md border bg-surface px-3 py-2 text-sm text-ink ring-offset-canvas transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50',
             isError
               ? 'border-rose focus-visible:ring-rose'
               : 'border-line focus-visible:border-emerald',
@@ -99,7 +99,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         disabled={disabled}
         aria-invalid={isError ? 'true' : undefined}
         className={cn(
-          'flex min-h-[80px] w-full rounded-md border bg-surface px-3 py-2 text-sm text-ink ring-offset-canvas transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-surface dark:text-ink',
+          'flex min-h-[80px] w-full rounded-md border bg-surface px-3 py-2 text-sm text-ink ring-offset-canvas transition-colors placeholder:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50',
           isError ? 'border-rose focus-visible:ring-rose' : 'border-line focus-visible:border-emerald',
           className,
         )}
