@@ -324,7 +324,8 @@ function RequestDetail({ scope, id, canApprove, canIssue }: {
   const actionableApproval = request?.status === 'pending_approval' && items.isSuccess && items.data.length > 0
     && (canApprove || (canIssue && !request.escalated_to_cfo))
   const actionableEscalation = request?.status === 'pending_approval' && !request.escalated_to_cfo && (canIssue || canApprove)
-  const remaining = (items.data ?? []).some((row) => row.quantity_issued < row.quantity)
+  const remaining = (items.data ?? []).filter((row) => row.quantity_issued < row.quantity)
+  const hasEquipmentToIssue = remaining.some((row) => row.equipment_assets !== null)
   const canSendIssue = Boolean(canFulfill && warehouses.data?.some(({ id: optionId }) => optionId === warehouseId) && !mutation.isPending)
 
   return (
@@ -346,7 +347,7 @@ function RequestDetail({ scope, id, canApprove, canIssue }: {
             <div className="text-sm text-soft">Estimated value <strong className="block text-ink">{moneyFormat.format(request.total_estimated_value)}</strong></div>
           </div>
 
-          {(actionableApproval || actionableEscalation || (canFulfill && remaining && items.isSuccess)) && (
+          {(actionableApproval || actionableEscalation || (canFulfill && remaining.length > 0 && items.isSuccess)) && (
             <section aria-label="Request actions" className={card + ' space-y-3'}>
               <h2 className="font-display font-semibold text-ink">Request actions</h2>
               <div className="flex flex-wrap gap-2">
@@ -357,12 +358,12 @@ function RequestDetail({ scope, id, canApprove, canIssue }: {
                   <Button variant="outline" disabled={mutation.isPending} onClick={() => mutation.mutate({ kind: 'escalate', requestId: id })}>Send to CFO</Button>
                 )}
               </div>
-              {canFulfill && remaining && items.isSuccess && (
+              {canFulfill && remaining.length > 0 && items.isSuccess && (
                 <>
                   {warehouses.isPending && <p role="status" className="text-sm text-muted">Loading warehouses…</p>}
                   {warehouses.isError && <RetryNotice text="Could not load warehouses." retry={() => { void warehouses.refetch() }} />}
                   {warehouses.isSuccess && (
-                    <div className="grid items-end gap-3 md:grid-cols-[1fr_1fr_auto]">
+                    <div className={'grid items-end gap-3 ' + (hasEquipmentToIssue ? 'md:grid-cols-[1fr_1fr_auto]' : 'md:grid-cols-[1fr_auto]')}>
                       <label className={fieldStyle}>
                         <span>Issue from warehouse</span>
                         <select className={selectStyle} value={warehouseId} disabled={mutation.isPending}
@@ -371,11 +372,13 @@ function RequestDetail({ scope, id, canApprove, canIssue }: {
                           {warehouses.data.map(({ id: warehouse, name }) => <option key={warehouse} value={warehouse}>{name}</option>)}
                         </select>
                       </label>
-                      <label className={fieldStyle}>
-                        <span>Issue condition</span>
-                        <Input placeholder="Required when issuing one line" maxLength={500} value={condition} disabled={mutation.isPending}
-                          onChange={(event) => setCondition(event.target.value)} />
-                      </label>
+                      {hasEquipmentToIssue && (
+                        <label className={fieldStyle}>
+                          <span>Issue condition</span>
+                          <Input placeholder="Required when issuing individual equipment" maxLength={500} value={condition} disabled={mutation.isPending}
+                            onChange={(event) => setCondition(event.target.value)} />
+                        </label>
+                      )}
                       <Button disabled={!canSendIssue} onClick={() => mutation.mutate({ kind: 'issue-all', requestId: id, warehouseId })}>Issue remaining items</Button>
                     </div>
                   )}
@@ -405,7 +408,7 @@ function RequestDetail({ scope, id, canApprove, canIssue }: {
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="text-sm text-soft">{moneyFormat.format(item.quantity * item.estimated_unit_price)}</span>
-                      {canFulfill && item.quantity_issued < item.quantity && (
+                      {canFulfill && item.equipment_assets && item.quantity_issued < item.quantity && (
                         <Button size="sm" variant="outline" disabled={!canSendIssue || !condition.trim()}
                           onClick={() => mutation.mutate({ kind: 'issue-line', lineId: item.id, warehouseId, condition: condition.trim() })}>
                           Issue {lineName(item)}

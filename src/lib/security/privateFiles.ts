@@ -75,3 +75,25 @@ export async function createPrivateDownloadUrl(
 
   return signedUrl
 }
+
+export async function openPrivateDownloadInNewTab(
+  loadSignedUrl: () => Promise<string>,
+  isActive = () => true,
+) {
+  // Reserve the tab during the click so mobile browsers retain user activation.
+  const popup = window.open('', '_blank')
+  if (!popup) return false
+
+  try {
+    popup.opener = null
+    const url = await loadSignedUrl()
+    if (!popup.closed) {
+      if (isActive()) popup.location.replace(url)
+      else popup.close()
+    }
+    return true
+  } catch (cause) {
+    if (!popup.closed) popup.close()
+    throw cause
+  }
+}

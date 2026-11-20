@@ -68,7 +68,8 @@ describe('Project documents', () => {
   })
 
   it('lists records for readers and signs only the selected project document when opened', async () => {
-    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    const popup = { opener: window, closed: false, location: { replace: vi.fn() }, close: vi.fn() }
+    const open = vi.spyOn(window, 'open').mockReturnValue(popup as unknown as Window)
     listedDocuments = [storedDocument]
     const signedUrl = 'https://example.supabase.co/storage/v1/object/sign/private-files/file.pdf?token=test'
     createSignedUrl.mockResolvedValue({ data: { signedUrl }, error: null })
@@ -79,20 +80,34 @@ describe('Project documents', () => {
     expect(createSignedUrl).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Open Site plan.pdf' }))
 
-    await waitFor(() => expect(open).toHaveBeenCalledWith(signedUrl, '_blank', 'noopener,noreferrer'))
+    expect(open).toHaveBeenCalledWith('', '_blank')
+    expect(popup.opener).toBeNull()
+    await waitFor(() => expect(popup.location.replace).toHaveBeenCalledWith(signedUrl))
     expect(storageFrom).toHaveBeenCalledWith('private-files')
     expect(createSignedUrl).toHaveBeenCalledWith(storagePath, 60)
   })
 
-  it('blocks signed URLs from a different origin', async () => {
-    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+  it('closes the blank tab when a signed URL has a different origin', async () => {
+    const popup = { opener: window, closed: false, location: { replace: vi.fn() }, close: vi.fn() }
+    vi.spyOn(window, 'open').mockReturnValue(popup as unknown as Window)
     listedDocuments = [storedDocument]
     createSignedUrl.mockResolvedValue({ data: { signedUrl: 'https://example.com/other.pdf' }, error: null })
     mount(false)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Open Site plan.pdf' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('The private document could not be opened.')
-    expect(open).not.toHaveBeenCalled()
+    expect(popup.close).toHaveBeenCalledOnce()
+    expect(popup.location.replace).not.toHaveBeenCalled()
+  })
+
+  it('explains a blocked pop-up before requesting a signed document URL', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null)
+    listedDocuments = [storedDocument]
+    mount(false)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Site plan.pdf' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Allow pop-ups for OneHub to open the private document.')
+    expect(createSignedUrl).not.toHaveBeenCalled()
   })
 
   it('rejects bytes that do not match the selected extension and MIME type', async () => {

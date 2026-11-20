@@ -170,21 +170,35 @@ describe('Project cash accountability', () => {
     expenses = [expense]
     const signedUrl = 'https://example.supabase.co/storage/v1/object/sign/private-files/receipt.pdf?token=test'
     createSignedUrl.mockResolvedValue({ data: { signedUrl }, error: null })
-    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    const popup = { opener: window, closed: false, location: { replace: vi.fn() }, close: vi.fn() }
+    const open = vi.spyOn(window, 'open').mockReturnValue(popup as unknown as Window)
     mount({ status: 'completed' })
     fireEvent.click(await screen.findByRole('button', { name: 'Open receipt for Site transport' }))
-    await waitFor(() => expect(open).toHaveBeenCalledWith(signedUrl, '_blank', 'noopener,noreferrer'))
+    expect(open).toHaveBeenCalledWith('', '_blank')
+    expect(popup.opener).toBeNull()
+    await waitFor(() => expect(popup.location.replace).toHaveBeenCalledWith(signedUrl))
     expect(createSignedUrl).toHaveBeenCalledWith(receiptPath, 60)
   })
 
   it('does not sign a receipt path from a different advance', async () => {
     expenses = [{ ...expense, receipt_url: receiptPath.replace(advanceId, expenseId) }]
-    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    const popup = { opener: window, closed: false, location: { replace: vi.fn() }, close: vi.fn() }
+    vi.spyOn(window, 'open').mockReturnValue(popup as unknown as Window)
     mount()
     fireEvent.click(await screen.findByRole('button', { name: 'Open receipt for Site transport' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('The private receipt could not be opened.')
     expect(createSignedUrl).not.toHaveBeenCalled()
-    expect(open).not.toHaveBeenCalled()
+    expect(popup.location.replace).not.toHaveBeenCalled()
+    expect(popup.close).toHaveBeenCalledOnce()
+  })
+
+  it('explains a blocked pop-up before requesting a signed receipt URL', async () => {
+    expenses = [expense]
+    vi.spyOn(window, 'open').mockReturnValue(null)
+    mount({ status: 'completed' })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open receipt for Site transport' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Allow pop-ups for OneHub to open the private receipt.')
+    expect(createSignedUrl).not.toHaveBeenCalled()
   })
 
 })

@@ -6,6 +6,7 @@ import { Dialog, DialogClose } from '@/components/ui/Dialog'
 import { FieldError, FormGroup, Input, Textarea } from '@/components/ui/Input'
 import { StatusPill } from '@/components/ui/StatusPill'
 import { isAbortError, type IdentityScopeRef } from '@/lib/idempotency/pendingOperations'
+import { openPrivateDownloadInNewTab } from '@/lib/security/privateFiles'
 import { formatLocalDateLabel, formatWallClockDateInput } from '@/modules/attendance/lib/zonedTime'
 import {
   cashReceiptAccept,
@@ -243,8 +244,8 @@ function AccountabilityContent({ advanceId, recipientId, status, canManage, scop
     setDownloadError('')
     setOpening(true)
     try {
-      const url = await openCashReceipt(scope, path, advanceId, recipientId)
-      window.open(url, '_blank', 'noopener,noreferrer')
+      const opened = await openPrivateDownloadInNewTab(() => openCashReceipt(scope, path, advanceId, recipientId))
+      if (!opened) setDownloadError('Allow pop-ups for OneHub to open the private receipt.')
     } catch (cause) {
       if (!isAbortError(cause)) setDownloadError('The private receipt could not be opened.')
     } finally {

@@ -25,6 +25,8 @@ let role: string
 let status: string
 let escalated: boolean
 let issuedQuantity: number
+let includeEquipment: boolean
+let includeConsumables: boolean
 
 vi.mock('@/modules/auth/AuthProvider', () => ({
   useAuth: () => ({
@@ -54,6 +56,8 @@ describe('warehouse requests', () => {
     resetProtectedSessionRegistryForTest()
     status = 'pending_approval'
     issuedQuantity = 0
+    includeEquipment = true
+    includeConsumables = false
     escalated = false
     role = 'coordinator'
     permissions = ['inventory.read', 'inventory.request']
@@ -74,11 +78,18 @@ describe('warehouse requests', () => {
         equipment_assets: [{ id: fixtures.asset, model_name: 'Splicer', serial_number: 'SP-1', is_sensitive: true }],
         consumable_items: [],
         warehouses: [{ id: fixtures.warehouse, name: 'Main depot' }],
-        stock_request_items: [{
-          id: fixtures.row, quantity: 1, quantity_issued: issuedQuantity, estimated_unit_price: 100000,
-          expected_return_date: '2027-01-01', consumable_items: null,
-          equipment_assets: { model_name: 'Splicer', serial_number: 'SP-1' },
-        }],
+        stock_request_items: [
+          ...(includeEquipment ? [{
+            id: fixtures.row, quantity: 1, quantity_issued: issuedQuantity, estimated_unit_price: 100000,
+            expected_return_date: '2027-01-01', consumable_items: null,
+            equipment_assets: { model_name: 'Splicer', serial_number: 'SP-1' },
+          }] : []),
+          ...(includeConsumables ? [{
+            id: 'a9000000-0000-4000-8000-000000000008', quantity: 5, quantity_issued: 0, estimated_unit_price: 2000,
+            expected_return_date: null, consumable_items: { name: 'Cable ties', sku: 'CT-1', unit_of_measure: 'pack' },
+            equipment_assets: null,
+          }] : []),
+        ],
       }
       const response = Promise.resolve({ data: records[table], error: null })
       const builder = { select: () => builder, eq: () => builder, in: () => builder, is: () => builder,
@@ -137,6 +148,38 @@ describe('warehouse requests', () => {
     await waitFor(() => expect(rpc).toHaveBeenCalledWith('rpc_issue_request_item', {
       p_request_item_id: fixtures.row, p_warehouse_id: fixtures.warehouse, p_issue_condition: 'Inspected and working',
     }))
+  })
+
+  it('offers per-line issue for equipment only on a mixed request', async () => {
+    permissions = ['inventory.read', 'inventory.issue']
+    role = 'warehouse_manager'
+    status = 'approved'
+    includeConsumables = true
+    mount(fixtures.request)
+
+    expect(await screen.findByRole('button', { name: 'Issue Splicer' })).toBeInTheDocument()
+    expect(screen.getByText('Cable ties')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Issue Cable ties' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Issue condition')).toBeInTheDocument()
+  })
+
+  it('issues a consumables-only request with the remaining-items action', async () => {
+    permissions = ['inventory.read', 'inventory.issue']
+    role = 'warehouse_manager'
+    status = 'approved'
+    includeEquipment = false
+    includeConsumables = true
+    mount(fixtures.request)
+
+    await screen.findByRole('option', { name: 'Main depot' })
+    expect(screen.queryByLabelText('Issue condition')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Issue from warehouse'), { target: { value: fixtures.warehouse } })
+    fireEvent.click(screen.getByRole('button', { name: 'Issue remaining items' }))
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith('rpc_issue_stock', {
+      p_request_id: fixtures.request,
+      p_warehouse_id: fixtures.warehouse,
+    }))
+    expect(rpc.mock.calls.some(([name]) => name === 'rpc_issue_request_item')).toBe(false)
   })
 
   it('keeps an inaccessible request out of view and skips its item query', async () => {

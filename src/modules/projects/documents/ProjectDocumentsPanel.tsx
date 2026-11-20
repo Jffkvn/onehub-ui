@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/patterns/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { FieldError, FormGroup, Input } from '@/components/ui/Input'
 import { isAbortError, useProtectedIdentityScope, type IdentityScopeRef } from '@/lib/idempotency/pendingOperations'
+import { openPrivateDownloadInNewTab } from '@/lib/security/privateFiles'
 import { formatDateTimeInZone } from '@/modules/attendance/lib/zonedTime'
 import { useAuth } from '@/modules/auth/AuthProvider'
 import {
@@ -77,12 +78,15 @@ function DocumentsContent({ scope, projectId, canUpload }: ProjectDocumentsProps
     setError('')
     setOpeningId(item.id)
     try {
-      const url = await projectDocumentDownloadUrl(scope, projectId, item)
-      if (active.current) window.open(url, '_blank', 'noopener,noreferrer')
+      const opened = await openPrivateDownloadInNewTab(
+        () => projectDocumentDownloadUrl(scope, projectId, item),
+        () => active.current,
+      )
+      if (!opened && active.current) setError('Allow pop-ups for OneHub to open the private document.')
     } catch (cause) {
-      if (!isAbortError(cause)) setError('The private document could not be opened.')
+      if (active.current && !isAbortError(cause)) setError('The private document could not be opened.')
     } finally {
-      setOpeningId(null)
+      if (active.current) setOpeningId(null)
     }
   }
 
