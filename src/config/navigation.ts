@@ -1,9 +1,11 @@
 import type { ComponentType } from 'react'
+import type { UserRole } from './modules'
 import {
   LayoutDashboard,
   UserCheck,
   Users,
   Calendar,
+  CalendarCheck,
   Award,
   GraduationCap,
   Sliders,
@@ -26,6 +28,14 @@ import {
   Settings,
   ShieldAlert,
   Key,
+  Headphones,
+  FilePlus2,
+  Send,
+  Briefcase,
+  Activity,
+  Megaphone,
+  ShieldCheck,
+  Wallet,
 } from 'lucide-react'
 
 export type NavSection =
@@ -33,6 +43,7 @@ export type NavSection =
   | 'People'
   | 'Finance'
   | 'Operations'
+  | 'Service Ops'
   | 'Inventory'
   | 'Custody'
   | 'System'
@@ -45,14 +56,29 @@ export interface NavItem {
   section: NavSection
   permission?: string
   anyOf?: string[]
+  allowedRoles?: readonly UserRole[]
+  disallowMonitorOnly?: boolean
   countKey?: string
 }
+
+export function isMonitorOnlyAccount(roleKeys?: readonly UserRole[]): boolean {
+  return Boolean(roleKeys && roleKeys.length > 0 && roleKeys.every((role) => role === 'service_monitor'))
+}
+
+// Provisional pending owner decision on super_admin Cash access (matches Launch 0041_cash_advances.sql).
+export const CASH_ALLOWED_ROLES: readonly UserRole[] = [
+  'coordinator',
+  'project_manager',
+  'cfo',
+  'managing_director',
+]
 
 export const NAV_SECTIONS: NavSection[] = [
   'Overview',
   'People',
   'Finance',
   'Operations',
+  'Service Ops',
   'Inventory',
   'Custody',
   'System',
@@ -66,6 +92,7 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/dashboard',
     icon: LayoutDashboard,
     section: 'Overview',
+    disallowMonitorOnly: true,
   },
   {
     key: 'my',
@@ -73,10 +100,88 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/my',
     icon: UserCheck,
     section: 'Overview',
+    disallowMonitorOnly: true,
     countKey: 'myPending',
+  },
+  {
+    key: 'my-attendance',
+    label: 'My Attendance',
+    path: '/my/attendance',
+    icon: Clock,
+    section: 'Overview',
+    anyOf: ['attendance.clock_self', 'attendance.read_self'],
+  },
+
+  { key: 'my-leave', label: 'My Leave', path: '/my/leave', icon: Calendar, section: 'Overview', disallowMonitorOnly: true },
+  { key: 'my-payslips', label: 'My Pay', path: '/my/payslips', icon: Receipt, section: 'Overview', disallowMonitorOnly: true },
+  {
+    key: 'my-advances',
+    label: 'My Advances',
+    path: '/my/advances',
+    icon: Banknote,
+    section: 'Overview',
+    permission: 'staff_advances.read_self',
+    disallowMonitorOnly: true,
+  },
+
+
+  {
+    key: 'my-performance',
+    label: 'My Performance',
+    path: '/my/performance',
+    icon: Award,
+    section: 'Overview',
+    permission: 'performance.read_self',
+    disallowMonitorOnly: true,
+  },
+  {
+    key: 'my-training',
+    label: 'My Training',
+    path: '/my/training',
+    icon: GraduationCap,
+    section: 'Overview',
+    permission: 'training.read_self',
+    disallowMonitorOnly: true,
+  },
+
+  {
+    key: 'my-announcements',
+    label: 'Announcements',
+    path: '/my/announcements',
+    icon: Megaphone,
+    section: 'Overview',
+    permission: 'announcements.read',
+    disallowMonitorOnly: true,
+  },
+  {
+    key: 'my-insurance',
+    label: 'My Insurance',
+    path: '/my/insurance',
+    icon: ShieldCheck,
+    section: 'Overview',
+    permission: 'insurance.read_self',
+    disallowMonitorOnly: true,
+  },
+  {
+    key: 'my-reimbursements',
+    label: 'My Reimbursements',
+    path: '/my/reimbursements',
+    icon: Wallet,
+    section: 'Overview',
+    permission: 'reimbursements.read_self',
+    disallowMonitorOnly: true,
   },
 
   // ─── People ───────────────────────────────────────────────────────────────
+  {
+    key: 'manage-announcements',
+    label: 'Manage Announcements',
+    path: '/people/announcements',
+    icon: Megaphone,
+    section: 'People',
+    permission: 'announcements.manage',
+    disallowMonitorOnly: true,
+  },
   {
     key: 'employees',
     label: 'Employees',
@@ -85,6 +190,14 @@ export const NAV_ITEMS: NavItem[] = [
     section: 'People',
     permission: 'employees.read',
     countKey: 'employees',
+  },
+  {
+    key: 'attendance',
+    label: 'Attendance',
+    path: '/people/attendance',
+    icon: CalendarCheck,
+    section: 'People',
+    anyOf: ['attendance.read_all', 'attendance.manage', 'attendance.team_review'],
   },
   {
     key: 'leave',
@@ -120,6 +233,15 @@ export const NAV_ITEMS: NavItem[] = [
     section: 'People',
     permission: 'employees.manage_setup',
   },
+  {
+    key: 'insurance',
+    label: 'Health Insurance',
+    path: '/people/insurance',
+    icon: ShieldCheck,
+    section: 'People',
+    anyOf: ['insurance.read', 'insurance.manage'],
+    disallowMonitorOnly: true,
+  },
 
   // ─── Finance ──────────────────────────────────────────────────────────────
   {
@@ -139,6 +261,15 @@ export const NAV_ITEMS: NavItem[] = [
     section: 'Finance',
     permission: 'staff_advances.manage',
     countKey: 'advancesActive',
+  },
+  {
+    key: 'reimbursements',
+    label: 'Reimbursements',
+    path: '/finance/reimbursements',
+    icon: Wallet,
+    section: 'Finance',
+    anyOf: ['reimbursements.read_all', 'reimbursements.review', 'reimbursements.pay'],
+    disallowMonitorOnly: true,
   },
   {
     key: 'deductions',
@@ -164,7 +295,7 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/ops/projects',
     icon: FolderKanban,
     section: 'Operations',
-    anyOf: ['projects.read_all', 'projects.read_operational'],
+    anyOf: ['projects.manage', 'projects.read_all', 'projects.read', 'projects.read_operational', 'projects.create'],
     countKey: 'projectsActive',
   },
   {
@@ -173,7 +304,8 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/ops/cash',
     icon: Coins,
     section: 'Operations',
-    anyOf: ['cash_advances.manage', 'cash_advances.view_all'],
+    anyOf: ['cash_advances.manage', 'cash_advances.view_all', 'cash_advances.request'],
+    allowedRoles: CASH_ALLOWED_ROLES,
     countKey: 'cashPending',
   },
 
@@ -185,6 +317,52 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Package,
     section: 'Operations',
     permission: 'inventory.read',
+  },
+
+  // ─── Service Ops (Batch 5 + Batch 6 Monitor boundary) ──────────────────────
+  {
+    key: 'services',
+    label: 'Service Overview',
+    path: '/services',
+    icon: Headphones,
+    section: 'Service Ops',
+    anyOf: ['service_requests.read', 'service_visits.read_assigned'],
+    disallowMonitorOnly: true,
+  },
+  {
+    key: 'service-intake',
+    label: 'Service Intake',
+    path: '/services/intake',
+    icon: FilePlus2,
+    section: 'Service Ops',
+    anyOf: ['service_requests.intake', 'service_requests.report_provider'],
+    disallowMonitorOnly: true,
+  },
+  {
+    key: 'service-dispatch',
+    label: 'Dispatch & Queues',
+    path: '/services/dispatch',
+    icon: Send,
+    section: 'Service Ops',
+    permission: 'service_requests.read',
+    disallowMonitorOnly: true,
+  },
+  {
+    key: 'service-my-jobs',
+    label: 'My Service Jobs',
+    path: '/services/my-jobs',
+    icon: Briefcase,
+    section: 'Service Ops',
+    permission: 'service_visits.read_assigned',
+    disallowMonitorOnly: true,
+  },
+  {
+    key: 'service-monitor',
+    label: 'Operations Monitor',
+    path: '/services/monitor',
+    icon: Activity,
+    section: 'Service Ops',
+    permission: 'service_requests.monitor',
   },
   {
     key: 'consumables',
@@ -210,7 +388,7 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/inventory/requests',
     icon: ClipboardList,
     section: 'Inventory',
-    anyOf: ['inventory.approve', 'inventory.request'],
+    anyOf: ['inventory.approve', 'inventory.request', 'inventory.issue'],
     countKey: 'stockRequests',
   },
   {
@@ -235,7 +413,7 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/inventory/bulk',
     icon: Layers,
     section: 'Inventory',
-    permission: 'inventory.adjust',
+    anyOf: ['inventory.receipt', 'inventory.adjust'],
   },
 
   // ─── Custody ──────────────────────────────────────────────────────────────
@@ -293,7 +471,19 @@ export const NAV_ITEMS: NavItem[] = [
   },
 ]
 
-export function isItemPermitted(item: NavItem, permissionKeys: string[]): boolean {
+export function isItemPermitted(
+  item: NavItem,
+  permissionKeys: readonly string[],
+  roleKeys?: readonly UserRole[],
+): boolean {
+  if (item.disallowMonitorOnly && isMonitorOnlyAccount(roleKeys)) {
+    return false
+  }
+  if (item.allowedRoles?.length && roleKeys !== undefined) {
+    if (!item.allowedRoles.some((role) => roleKeys.includes(role))) {
+      return false
+    }
+  }
   if (!item.permission && (!item.anyOf || item.anyOf.length === 0)) {
     return true
   }
@@ -311,8 +501,11 @@ export interface GroupedNavSection {
   items: NavItem[]
 }
 
-export function getPermittedNav(permissionKeys: string[]): GroupedNavSection[] {
-  const permitted = NAV_ITEMS.filter((item) => isItemPermitted(item, permissionKeys))
+export function getPermittedNav(
+  permissionKeys: readonly string[],
+  roleKeys?: readonly UserRole[],
+): GroupedNavSection[] {
+  const permitted = NAV_ITEMS.filter((item) => isItemPermitted(item, permissionKeys, roleKeys))
 
   const grouped: GroupedNavSection[] = []
   for (const section of NAV_SECTIONS) {

@@ -18,6 +18,7 @@ export function StatutoryExportsPage() {
   const [selectedRunId, setSelectedRunId] = useState<string>(
     approvedRuns[0]?.id || '',
   )
+  const [exportError, setExportError] = useState('')
 
   // Selected Run
   const activeRun = approvedRuns.find((r) => r.id === selectedRunId) || approvedRuns[0]
@@ -27,12 +28,15 @@ export function StatutoryExportsPage() {
     exportFn: (run: PayrollRun) => void | Promise<void>,
   ) => {
     if (!activeRun) return
+    setExportError('')
     try {
       // Audit record export in database prior to download
       await payrollApi.recordExport(activeRun.id, null, kind)
       await exportFn(activeRun)
-    } catch {
-      // Handled by UI
+    } catch (error) {
+      setExportError(
+        error instanceof Error ? error.message : 'Unable to generate export file.',
+      )
     }
   }
 
@@ -67,13 +71,19 @@ export function StatutoryExportsPage() {
 
         {activeRun && (
           <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-line text-xs font-mono text-soft">
-            <div>Net Pay: <strong className="text-emerald-600">UGX {activeRun.totalNet.toLocaleString()}</strong></div>
-            <div>PAYE: <strong className="text-rose">UGX {activeRun.totalPaye.toLocaleString()}</strong></div>
-            <div>NSSF (15%): <strong className="text-blue">UGX {(activeRun.totalNssfEmployee + activeRun.totalNssfEmployer).toLocaleString()}</strong></div>
-            <div>Staff: <strong className="text-ink">{activeRun.items.length}</strong></div>
+            <div>Net Pay: <strong className="text-emerald-600 whitespace-nowrap tabular-nums">UGX {activeRun.totalNet.toLocaleString()}</strong></div>
+            <div>PAYE: <strong className="text-rose whitespace-nowrap tabular-nums">UGX {activeRun.totalPaye.toLocaleString()}</strong></div>
+            <div>NSSF (15%): <strong className="text-blue whitespace-nowrap tabular-nums">UGX {(activeRun.totalNssfEmployee + activeRun.totalNssfEmployer).toLocaleString()}</strong></div>
+            <div>Staff: <strong className="text-ink tabular-nums">{activeRun.items.length}</strong></div>
           </div>
         )}
       </div>
+
+      {exportError && (
+        <div role="alert" className="rounded-md border border-rose/30 bg-rose-tint p-3 text-xs text-rose">
+          {exportError}
+        </div>
+      )}
 
       {/* Export Cards Grid */}
       {isLoading ? (

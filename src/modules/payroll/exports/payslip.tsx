@@ -112,8 +112,9 @@ export async function createPayslipBlob(run: PayrollRun, item: PayrollItem) {
   return pdf(<PayslipDocument run={run} item={item} />).toBlob()
 }
 
-export async function downloadPayslip(run: PayrollRun, item: PayrollItem) {
+export async function downloadPayslip(run: PayrollRun, item: PayrollItem, assertCurrent?: () => void) {
   const blob = await createPayslipBlob(run, item)
+  assertCurrent?.()
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url

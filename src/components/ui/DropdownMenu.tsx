@@ -1,5 +1,6 @@
 import React from 'react'
 import * as RadixDropdown from '@radix-ui/react-dropdown-menu'
+import { useOverlayPortalContainer } from './OverlayPortalContext'
 import { cn } from '@/lib/utils'
 
 export interface DropdownMenuItem {
@@ -24,16 +25,19 @@ export function DropdownMenu({
   align = 'end',
   className,
 }: DropdownMenuProps) {
+  const portalContainer = useOverlayPortalContainer()
+
   return (
     <RadixDropdown.Root>
       <RadixDropdown.Trigger asChild>{trigger}</RadixDropdown.Trigger>
 
-      <RadixDropdown.Portal>
+      <RadixDropdown.Portal container={portalContainer}>
         <RadixDropdown.Content
           align={align}
           sideOffset={4}
+          collisionPadding={8}
           className={cn(
-            'z-overlay min-w-[160px] overflow-hidden rounded-md border border-line bg-surface p-1 shadow-md animate-in fade-in-80 slide-in-from-top-1',
+            'z-popover min-w-[160px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-md border border-line bg-surface p-1 shadow-md animate-in fade-in-80 slide-in-from-top-1',
             className,
           )}
         >

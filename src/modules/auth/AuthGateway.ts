@@ -60,6 +60,9 @@ const userRoles = z.enum([
   'warehouse_manager',
   'cfo',
   'managing_director',
+  'service_desk',
+  'service_monitor',
+  'service_dispatch_backup',
 ])
 
 const accessContextSchema = z.object({

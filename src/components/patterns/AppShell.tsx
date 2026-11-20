@@ -4,6 +4,7 @@ import { Topbar } from './Topbar'
 import { SlideOver } from '@/components/ui/SlideOver'
 import { getPermittedNav } from '@/config/navigation'
 import { useAuth } from '@/modules/auth/AuthProvider'
+import { NotificationBell } from '@/modules/notifications/NotificationBell'
 import { MOCK_ROLE_PERMISSIONS } from './DevRoleSwitcher'
 import { cn } from '@/lib/utils'
 
@@ -48,6 +49,9 @@ export function AppShell({
       ? MOCK_ROLE_PERMISSIONS[devPreviewRole]
       : access?.permissionKeys ?? []
 
+  const activeRoles =
+    import.meta.env.DEV && devPreviewRole ? [devPreviewRole] : access?.roleKeys ?? []
+
   const activeRoleName =
     suppliedUserRole ||
     (import.meta.env.DEV && devPreviewRole
@@ -60,8 +64,8 @@ export function AppShell({
   const orgName = suppliedOrgName || 'Egypro Uganda'
   const orgSubtitle = suppliedOrgSubtitle || 'UGX · Kampala Headquarters'
 
-  // Filter navigation dynamically based on active permissions if groups not explicitly passed
-  const groupedSections = getPermittedNav(activePermissions)
+  // Filter navigation dynamically based on active permissions and roles if groups not explicitly passed
+  const groupedSections = getPermittedNav(activePermissions, activeRoles)
 
   const sidebarGroups: NavGroup[] =
     suppliedGroups ||
@@ -134,6 +138,11 @@ export function AppShell({
           userAvatar={userAvatar}
           onSignOut={() => void auth.signOut()}
           unreadNotifications={unreadNotifications}
+          notificationSlot={
+            unreadNotifications === undefined ? (
+              <NotificationBell onNavigate={handleNavigate} />
+            ) : undefined
+          }
           actionSlot={topbarActionSlot}
         />
 

@@ -23,7 +23,16 @@ export function LoginPage() {
   const location = useLocation()
   const [submitError, setSubmitError] = useState('')
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard'
+  const rawFrom = (location.state as { from?: { pathname: string } })?.from?.pathname
+  const from =
+    rawFrom && rawFrom !== '/login' && rawFrom !== '/forbidden' ? rawFrom : '/'
+
+  const accessStatusError =
+    auth.status === 'access_denied'
+      ? 'Your account is inactive or unlinked and cannot access OneHub. Contact HR or the OneHub administrator.'
+      : auth.status === 'error'
+        ? 'Unable to verify your workspace access right now. Try again or contact HR.'
+        : ''
 
   const {
     register,
@@ -78,10 +87,10 @@ export function LoginPage() {
           />
         </FormGroup>
 
-        {submitError && (
-          <div className="flex items-center gap-2 rounded-md bg-rose-tint p-3 text-xs text-rose">
+        {(submitError || accessStatusError) && (
+          <div role="alert" className="flex items-center gap-2 rounded-md bg-rose-tint p-3 text-xs text-rose">
             <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{submitError}</span>
+            <span>{submitError || accessStatusError}</span>
           </div>
         )}
 

@@ -74,9 +74,9 @@ export function KpiCard({
       </div>
 
       {/* Main Figure */}
-      <div>
+      <div className="min-w-0">
         <p className="font-body text-xs font-medium text-muted">{title}</p>
-        <p className="font-display text-2xl font-bold tracking-tight text-ink tabular-nums mt-0.5">
+        <p className="font-display text-xl xl:text-2xl font-bold tracking-tight text-ink tabular-nums whitespace-nowrap mt-0.5">
           {isNumeric && typeof value === 'number' ? (
             <CountUp end={value} prefix={prefix} suffix={suffix} />
           ) : (

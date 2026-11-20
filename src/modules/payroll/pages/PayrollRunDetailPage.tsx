@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -14,6 +14,7 @@ import {
   Plus,
   Trash2,
   FileText,
+  AlertCircle,
 } from 'lucide-react'
 
 import { PageHeader } from '@/components/patterns/PageHeader'
@@ -23,7 +24,13 @@ import { Button } from '@/components/ui/Button'
 import { Input, FormGroup } from '@/components/ui/Input'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useHasPermission } from '@/modules/auth/AuthProvider'
-import { usePayrollRun, useReplacePayrollDraft } from '../api/payroll'
+import {
+  PayrollRefreshError,
+  usePayrollPayeStatus,
+  usePayrollRun,
+  useRefreshPayrollPaye,
+  useReplacePayrollDraft,
+} from '../api/payroll'
 import { ApprovePayrollModal } from '../components/ApprovePayrollModal'
 import { RecordPaymentModal } from '../components/RecordPaymentModal'
 import { CreateAmendmentModal } from '../components/CreateAmendmentModal'
@@ -40,8 +47,19 @@ export function PayrollRunDetailPage() {
   const canExport = useHasPermission('payroll.export')
   const canRecordPayment = useHasPermission('payroll.record_payment')
 
-  const { data: run, isLoading } = usePayrollRun(id)
+  const {
+    data: run,
+    isLoading,
+    isFetching = false,
+    isError: isRunError = false,
+    error: runError = null,
+    refetch,
+  } = usePayrollRun(id)
   const replaceMutation = useReplacePayrollDraft()
+  const payeStatus = usePayrollPayeStatus(id, Boolean(run && run.runType !== 'historical'))
+  const refreshPayeMutation = useRefreshPayrollPaye()
+  const [payeReason, setPayeReason] = useState('')
+  const [payeError, setPayeError] = useState<string | null>(null)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [saveReason, setSaveReason] = useState('')
@@ -51,6 +69,10 @@ export function PayrollRunDetailPage() {
   const [draftState, setDraftState] = useState<Record<string, PayrollDraftItem>>({})
   const [deferredItemIds, setDeferredItemIds] = useState<string[]>([])
   const [isDirty, setIsDirty] = useState(false)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [refreshFailedError, setRefreshFailedError] = useState<string | null>(null)
+  const saveInFlightRef = useRef(false)
+  const draftVersionRef = useRef(0)
 
   // Modals
   const [approveModalOpen, setApproveModalOpen] = useState(false)
@@ -59,6 +81,12 @@ export function PayrollRunDetailPage() {
 
   // Initialize draft state from loaded run items
   const isDraft = run?.status === 'draft'
+  const isDraftBusy = isSavingDraft || replaceMutation.isPending || refreshPayeMutation.isPending
+  const payeApprovalBlocked = isDraft && run.runType !== 'historical' &&
+    (payeStatus.isFetching || payeStatus.isError || payeStatus.data?.refreshRequired !== false)
+  const payeDate = (value: string) =>
+    new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(value))
+  const isEditingLocked = isDraftBusy || Boolean(refreshFailedError)
 
   const activeItems = useMemo(() => {
     if (!run) return []
@@ -141,17 +169,21 @@ export function PayrollRunDetailPage() {
   }
 
   const updateDraftItem = (itemId: string, patch: Partial<PayrollDraftItem>) => {
+    if (saveInFlightRef.current || isEditingLocked) return
     const originalItem = run?.items.find((i) => i.id === itemId)
     if (!originalItem) return
 
     const currentDraft = getDraftItem(originalItem)
     const nextDraft = { ...currentDraft, ...patch }
 
+    draftVersionRef.current += 1
     setDraftState((prev) => ({ ...prev, [itemId]: nextDraft }))
     setIsDirty(true)
   }
 
   const toggleDeferItem = (itemId: string) => {
+    if (saveInFlightRef.current || isEditingLocked) return
+    draftVersionRef.current += 1
     setDeferredItemIds((prev) =>
       prev.includes(itemId) ? prev.filter((i) => i !== itemId) : [...prev, itemId],
     )
@@ -159,6 +191,7 @@ export function PayrollRunDetailPage() {
   }
 
   const addLineItem = (itemId: string, line: PayrollLineItem) => {
+    if (saveInFlightRef.current || isEditingLocked) return
     const originalItem = run?.items.find((i) => i.id === itemId)
     if (!originalItem) return
 
@@ -168,18 +201,34 @@ export function PayrollRunDetailPage() {
   }
 
   const removeLineItem = (itemId: string, index: number) => {
+    if (saveInFlightRef.current || isEditingLocked) return
     const originalItem = run?.items.find((i) => i.id === itemId)
     if (!originalItem) return
 
     const currentDraft = getDraftItem(originalItem)
+    const target = currentDraft.lineItems[index]
+    if (target?.code.trim().toUpperCase() === 'STAFF_ADVANCE') return
     const nextLines = currentDraft.lineItems.filter((_, idx) => idx !== index)
     updateDraftItem(itemId, { lineItems: nextLines })
   }
 
   const handleSaveDraft = async () => {
-    if (!run || saveReason.trim().length < 3) return
+    if (
+      saveInFlightRef.current ||
+      isEditingLocked ||
+      !run ||
+      !isDirty ||
+      saveReason.trim().length < 3
+    ) {
+      return
+    }
 
+    const saveVersion = draftVersionRef.current
     const itemsToSave: PayrollDraftItem[] = activeItems.map((item) => getDraftItem(item))
+
+    saveInFlightRef.current = true
+    setIsSavingDraft(true)
+    setRefreshFailedError(null)
 
     try {
       await replaceMutation.mutateAsync({
@@ -187,10 +236,71 @@ export function PayrollRunDetailPage() {
         items: itemsToSave,
         reason: saveReason.trim(),
       })
+
+      if (draftVersionRef.current === saveVersion) {
+        setDraftState({})
+        setDeferredItemIds([])
+        setIsDirty(false)
+        setSaveReason('')
+      }
+    } catch (error) {
+      if (
+        error instanceof PayrollRefreshError ||
+        (error instanceof Error && error.name === 'PayrollRefreshError')
+      ) {
+        setRefreshFailedError(
+          error.message || 'Unable to refresh updated payroll run from the server.',
+        )
+      }
+      // Save failures stay visible via replaceMutation.isError while preserving local edits.
+    } finally {
+      saveInFlightRef.current = false
+      setIsSavingDraft(false)
+    }
+  }
+
+  const handleRefreshPaye = async () => {
+    if (!run || !isDraft || !canPrepare || !payeStatus.data?.refreshRequired ||
+      isDirty || isEditingLocked || saveInFlightRef.current || payeReason.trim().length < 3) {
+      return
+    }
+    saveInFlightRef.current = true
+    setPayeError(null)
+
+    try {
+      await refreshPayeMutation.mutateAsync({ id: run.id, reason: payeReason.trim() })
+      setPayeReason('')
+    } catch (error) {
+      if (error instanceof PayrollRefreshError) {
+        setRefreshFailedError(error.message)
+      } else {
+        setPayeError(
+          error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+            ? error.message
+            : 'PAYE could not be refreshed. Check the draft and try again.',
+        )
+      }
+    } finally {
+      saveInFlightRef.current = false
+    }
+  }
+
+  const handleRetryRefresh = async () => {
+    if (!refetch) return
+    const [res, tax] = await Promise.all([
+      refetch(),
+      run && run.runType !== 'historical' ? payeStatus.refetch() : Promise.resolve(null),
+    ])
+    if (!res.isError && res.data && (!tax || (!tax.isError && tax.data))) {
+      setDraftState({})
+      setDeferredItemIds([])
       setIsDirty(false)
       setSaveReason('')
-    } catch {
-      // Error handled by mutation state
+      setRefreshFailedError(null)
+      replaceMutation.reset?.()
+    } else {
+      const error = res.error ?? tax?.error
+      setRefreshFailedError(error instanceof Error ? error.message : 'Unable to reload payroll and PAYE status.')
     }
   }
 
@@ -224,6 +334,48 @@ export function PayrollRunDetailPage() {
           </div>
         }
       />
+
+      {isDraft && payeStatus.isError && (
+        <div role="alert" className="rounded-lg border border-amber/40 bg-amber/10 p-4 text-sm">
+          <p>Unable to verify the PAYE schedule. Retry before approving this draft.</p>
+          <Button className="mt-3" variant="outline" size="sm" onClick={() => void payeStatus.refetch()}>
+            Retry PAYE check
+          </Button>
+        </div>
+      )}
+      {isDraft && payeStatus.data?.refreshRequired ? (
+        <section className="rounded-lg border border-amber/40 bg-amber/10 p-4 text-sm">
+          <h2 className="font-semibold text-ink">PAYE refresh required</h2>
+          <p className="mt-1 text-soft">
+            Apply the resident schedule effective {payeStatus.data.effectiveFrom ? payeDate(payeStatus.data.effectiveFrom) : 'the applicable date'} before approval.
+            Refresh recalculates PAYE and net pay from the saved draft.
+          </p>
+          {canPrepare ? (
+            <div className="mt-3 flex flex-wrap items-end gap-3">
+              <label className="w-full max-w-sm">
+                <span className="mb-1 block font-medium">Refresh reason</span>
+                <Input aria-label="PAYE refresh reason" value={payeReason} maxLength={1000}
+                  disabled={isEditingLocked || isDirty} onChange={(event) => setPayeReason(event.target.value)} />
+              </label>
+              <Button
+                disabled={isEditingLocked || isDirty || payeReason.trim().length < 3}
+                loading={refreshPayeMutation.isPending}
+                onClick={() => void handleRefreshPaye()}
+              >
+                Refresh PAYE
+              </Button>
+            </div>
+          ) : (
+            <p className="mt-2 text-soft">A payroll preparer can refresh this draft.</p>
+          )}
+          {isDirty && <p className="mt-2 text-soft">Save your draft edits before refreshing PAYE.</p>}
+          {payeError && <p role="alert" className="mt-2 text-rose">{payeError}</p>}
+        </section>
+      ) : payeStatus.data?.appliedEffectiveFrom && (
+        <p className="rounded-lg border border-line bg-surface p-3 text-sm text-soft">
+          Resident PAYE schedule · Applied since {payeDate(payeStatus.data.appliedEffectiveFrom)}
+        </p>
+      )}
 
       {/* Lock Notice for Approved Runs */}
       {run.status === 'approved' && (
@@ -271,16 +423,16 @@ export function PayrollRunDetailPage() {
       </div>
 
       {/* Employer NSSF Banner */}
-      <div className="rounded-lg border border-blue-tint bg-blue-tint/50 p-4 text-xs text-ink flex items-center justify-between">
+      <div className="rounded-lg border border-blue-tint bg-blue-tint/50 p-4 text-xs text-ink flex flex-wrap items-center justify-between gap-3">
         <div>
           <span className="font-bold text-blue">Employer NSSF Banner</span>
           <p className="text-soft mt-0.5">
-            Employer NSSF cost: <strong className="font-mono text-ink">UGX {totals.nssfEmployer.toLocaleString()}</strong> — company contribution on top of salaries.
+            Employer NSSF cost: <strong className="font-mono text-ink whitespace-nowrap tabular-nums">UGX {totals.nssfEmployer.toLocaleString()}</strong> — company contribution on top of salaries.
           </p>
         </div>
         <div className="text-right">
           <p className="text-muted font-medium">Total NSSF to Remit (15%)</p>
-          <p className="font-mono text-sm font-bold text-ink">
+          <p className="font-mono text-sm font-bold text-ink whitespace-nowrap tabular-nums">
             UGX {(totals.nssfEmployee + totals.nssfEmployer).toLocaleString()}
           </p>
         </div>
@@ -432,6 +584,7 @@ export function PayrollRunDetailPage() {
                           <Button
                             variant="danger"
                             size="sm"
+                            disabled={isEditingLocked}
                             onClick={() => toggleDeferItem(item.id)}
                           >
                             Defer from run
@@ -444,6 +597,7 @@ export function PayrollRunDetailPage() {
                               type="number"
                               min={0}
                               max={100}
+                              disabled={isEditingLocked}
                               value={draft.percentOfMonthWorked}
                               onChange={(e) =>
                                 updateDraftItem(item.id, {
@@ -457,6 +611,7 @@ export function PayrollRunDetailPage() {
                             <Input
                               type="number"
                               min={0}
+                              disabled={isEditingLocked}
                               value={draft.overtimeHours}
                               onChange={(e) =>
                                 updateDraftItem(item.id, {
@@ -471,34 +626,49 @@ export function PayrollRunDetailPage() {
                         <div className="space-y-2 pt-2">
                           <p className="text-xs font-semibold text-soft">Custom Line Items</p>
                           <div className="space-y-1.5">
-                            {draft.lineItems.map((line, idx) => (
-                              <div
-                                key={idx}
-                                className="flex items-center justify-between rounded bg-surface p-2 text-xs border border-line"
-                              >
-                                <div>
-                                  <span className="font-mono text-[10px] uppercase font-bold text-muted mr-2">
-                                    {line.kind} ({line.code})
-                                  </span>
-                                  <span className="text-ink">{line.description}</span>
+                            {draft.lineItems.map((line, idx) => {
+                              const isAutoStaffAdvance =
+                                line.code.trim().toUpperCase() === 'STAFF_ADVANCE'
+                              return (
+                                <div
+                                  key={`${line.kind}-${line.code}-${idx}`}
+                                  className="flex items-center justify-between rounded bg-surface p-2 text-xs border border-line"
+                                >
+                                  <div>
+                                    <span className="font-mono text-[10px] uppercase font-bold text-muted mr-2">
+                                      {line.kind} ({line.code})
+                                    </span>
+                                    <span className="text-ink">{line.description}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-mono font-bold text-ink whitespace-nowrap tabular-nums">
+                                      UGX {line.amount.toLocaleString()}
+                                    </span>
+                                    {isAutoStaffAdvance ? (
+                                      <span className="rounded bg-line/60 px-2 py-0.5 text-[11px] font-medium text-muted">
+                                        Auto-calculated
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        disabled={isEditingLocked}
+                                        aria-label={`Remove ${line.description}`}
+                                        onClick={() => removeLineItem(item.id, idx)}
+                                        className="text-rose hover:bg-rose-tint p-1 rounded disabled:pointer-events-none disabled:opacity-50"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="font-mono font-bold text-ink">
-                                    UGX {line.amount.toLocaleString()}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeLineItem(item.id, idx)}
-                                    className="text-rose hover:bg-rose-tint p-1 rounded"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                              )
+                            })}
                           </div>
 
-                          <AddLineItemForm onAdd={(line) => addLineItem(item.id, line)} />
+                          <AddLineItemForm
+                            disabled={isEditingLocked}
+                            onAdd={(line) => addLineItem(item.id, line)}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -548,6 +718,66 @@ export function PayrollRunDetailPage() {
         </table>
       </div>
 
+      {/* Draft Save / Refresh Error */}
+      {refreshFailedError ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber/40 bg-amber-tint/70 p-3 text-xs text-ink"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-amber" />
+            <span>
+              Draft changes were saved on the server, but refreshing the recalculated run failed (
+              {refreshFailedError}). Retry refresh before making further edits or approving.
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            loading={isFetching || payeStatus.isFetching}
+            onClick={() => void handleRetryRefresh()}
+          >
+            Retry Refresh
+          </Button>
+        </div>
+      ) : replaceMutation.isError ? (
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded-md border border-rose/30 bg-rose-tint p-3 text-xs text-rose"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>
+            {replaceMutation.error instanceof Error
+              ? replaceMutation.error.message
+              : 'Draft changes could not be saved. Review inputs and try again.'}
+          </span>
+        </div>
+      ) : isRunError ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-rose/30 bg-rose-tint p-3 text-xs text-rose"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>
+              {runError instanceof Error
+                ? runError.message
+                : 'Unable to refresh latest payroll run data from the server.'}
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            loading={isFetching}
+            onClick={() => void refetch?.()}
+          >
+            Retry Refresh
+          </Button>
+        </div>
+      ) : null}
+
       {/* Sticky Action Footer */}
       <div className="fixed bottom-0 left-0 right-0 z-topbar border-t border-line bg-surface/95 p-4 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
@@ -555,6 +785,7 @@ export function PayrollRunDetailPage() {
             {isDraft && canPrepare && (
               <Input
                 placeholder="Reason for changes (min 3 chars)..."
+                disabled={isEditingLocked}
                 value={saveReason}
                 onChange={(e) => setSaveReason(e.target.value)}
                 className="w-72 h-9 text-xs"
@@ -567,8 +798,8 @@ export function PayrollRunDetailPage() {
               <Button
                 variant="secondary"
                 size="md"
-                disabled={!isDirty || saveReason.trim().length < 3}
-                loading={replaceMutation.isPending}
+                disabled={isEditingLocked || !isDirty || saveReason.trim().length < 3}
+                loading={isDraftBusy}
                 onClick={() => void handleSaveDraft()}
                 leftIcon={<Save className="h-4 w-4" />}
               >
@@ -580,8 +811,11 @@ export function PayrollRunDetailPage() {
               <Button
                 variant="primary"
                 size="md"
-                disabled={isDirty}
-                onClick={() => setApproveModalOpen(true)}
+                disabled={isDirty || isEditingLocked || isFetching || isRunError || payeApprovalBlocked}
+                onClick={() => {
+                  if (isDirty || isEditingLocked || isFetching || isRunError || payeApprovalBlocked) return
+                  setApproveModalOpen(true)
+                }}
                 leftIcon={<Lock className="h-4 w-4" />}
               >
                 Approve Payroll Run
@@ -653,14 +887,20 @@ function FragmentWrapper({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-function AddLineItemForm({ onAdd }: { onAdd: (line: PayrollLineItem) => void }) {
+function AddLineItemForm({
+  onAdd,
+  disabled = false,
+}: {
+  onAdd: (line: PayrollLineItem) => void
+  disabled?: boolean
+}) {
   const [kind, setKind] = useState<PayrollLineItem['kind']>('allowance')
   const [code, setCode] = useState('BONUS')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
 
   const handleAdd = () => {
-    if (!description || !amount || Number(amount) <= 0) return
+    if (disabled || !description || !amount || Number(amount) <= 0) return
     onAdd({
       kind,
       code,
@@ -674,9 +914,10 @@ function AddLineItemForm({ onAdd }: { onAdd: (line: PayrollLineItem) => void }) 
   return (
     <div className="flex items-center gap-2 pt-2">
       <select
+        disabled={disabled}
         value={kind}
         onChange={(e) => setKind(e.target.value as PayrollLineItem['kind'])}
-        className="h-8 rounded border border-line bg-surface text-xs px-2"
+        className="h-8 rounded border border-line bg-surface text-xs px-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <option value="allowance">Allowance</option>
         <option value="deduction">Deduction</option>
@@ -684,26 +925,35 @@ function AddLineItemForm({ onAdd }: { onAdd: (line: PayrollLineItem) => void }) 
       </select>
       <input
         type="text"
+        disabled={disabled}
         placeholder="Code (e.g. BONUS)"
         value={code}
         onChange={(e) => setCode(e.target.value)}
-        className="h-8 w-24 rounded border border-line bg-surface text-xs px-2 uppercase font-mono"
+        className="h-8 w-24 rounded border border-line bg-surface text-xs px-2 uppercase font-mono disabled:cursor-not-allowed disabled:opacity-50"
       />
       <input
         type="text"
+        disabled={disabled}
         placeholder="Description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="h-8 flex-1 rounded border border-line bg-surface text-xs px-2"
+        className="h-8 flex-1 rounded border border-line bg-surface text-xs px-2 disabled:cursor-not-allowed disabled:opacity-50"
       />
       <input
         type="number"
+        disabled={disabled}
         placeholder="Amount UGX"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
-        className="h-8 w-28 rounded border border-line bg-surface text-xs px-2 font-mono"
+        className="h-8 w-28 rounded border border-line bg-surface text-xs px-2 font-mono disabled:cursor-not-allowed disabled:opacity-50"
       />
-      <Button variant="outline" size="sm" onClick={handleAdd} leftIcon={<Plus className="h-3 w-3" />}>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={disabled}
+        onClick={handleAdd}
+        leftIcon={<Plus className="h-3 w-3" />}
+      >
         Add Line
       </Button>
     </div>

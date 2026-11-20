@@ -31,7 +31,7 @@ export function RecordPaymentModal({
   const isValid = reference.trim().length >= 3 && paidOn <= today
 
   const handleSubmit = async () => {
-    if (!isValid) return
+    if (!isValid || recordMutation.isPending) return
     try {
       await recordMutation.mutateAsync({
         runId: run.id,
@@ -59,7 +59,7 @@ export function RecordPaymentModal({
               Record Disbursement Payment
             </h2>
             <p className="font-body text-xs text-soft">
-              Total Net Amount: <strong className="font-mono text-ink">UGX {run.totalNet.toLocaleString()}</strong>
+              Total Net Amount: <strong className="font-mono text-ink whitespace-nowrap tabular-nums">UGX {run.totalNet.toLocaleString()}</strong>
             </p>
           </div>
         </div>
@@ -108,6 +108,14 @@ export function RecordPaymentModal({
             />
           </FormGroup>
         </div>
+
+        {recordMutation.isError && (
+          <div role="alert" className="rounded-md bg-rose-tint p-3 text-xs text-rose">
+            {recordMutation.error instanceof Error
+              ? recordMutation.error.message
+              : 'Unable to record disbursement payment. Please try again.'}
+          </div>
+        )}
 
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
           <Button variant="outline" size="md" onClick={() => onOpenChange(false)}>

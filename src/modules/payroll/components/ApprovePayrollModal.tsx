@@ -25,7 +25,7 @@ export function ApprovePayrollModal({
   const isValid = reason.trim().length >= 3
 
   const handleSubmit = async () => {
-    if (!isValid) return
+    if (!isValid || approveMutation.isPending) return
     try {
       await approveMutation.mutateAsync({
         id: run.id,
@@ -75,6 +75,14 @@ export function ApprovePayrollModal({
             className="min-h-[80px]"
           />
         </FormGroup>
+
+        {approveMutation.isError && (
+          <div role="alert" className="rounded-md bg-rose-tint p-3 text-xs text-rose">
+            {approveMutation.error instanceof Error
+              ? approveMutation.error.message
+              : 'Unable to approve payroll run. Please try again.'}
+          </div>
+        )}
 
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
           <Button variant="outline" size="md" onClick={() => onOpenChange(false)}>

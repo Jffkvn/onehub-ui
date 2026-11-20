@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import * as Popover from '@radix-ui/react-popover'
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react'
+import { useOverlayPortalContainer } from './OverlayPortalContext'
 import { cn } from '@/lib/utils'
 
 export interface MultiComboboxOption {
@@ -31,6 +32,7 @@ export function MultiCombobox({
 }: MultiComboboxProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const portalContainer = useOverlayPortalContainer()
 
   const selectedSet = useMemo(() => new Set(values), [values])
 
@@ -107,11 +109,12 @@ export function MultiCombobox({
         </div>
       </Popover.Trigger>
 
-      <Popover.Portal>
+      <Popover.Portal container={portalContainer}>
         <Popover.Content
           align="start"
           sideOffset={4}
-          className="z-overlay w-[var(--radix-popover-trigger-width)] min-w-[200px] overflow-hidden rounded-md border border-line bg-surface p-1 shadow-md animate-in fade-in-80 slide-in-from-top-1"
+          collisionPadding={8}
+          className="z-popover w-[var(--radix-popover-trigger-width)] min-w-[200px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-md border border-line bg-surface p-1 shadow-md animate-in fade-in-80 slide-in-from-top-1"
         >
           <div className="flex items-center border-b border-line px-2 pb-1.5 pt-1">
             <Search className="mr-2 h-4 w-4 text-muted shrink-0" />

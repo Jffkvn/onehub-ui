@@ -3,6 +3,7 @@ import * as RadixTabs from '@radix-ui/react-tabs'
 import * as RadixTooltip from '@radix-ui/react-tooltip'
 import * as RadixAvatar from '@radix-ui/react-avatar'
 import * as RadixScrollArea from '@radix-ui/react-scroll-area'
+import { useOverlayPortalContainer } from './OverlayPortalContext'
 import { cn } from '@/lib/utils'
 
 /* ─── Tabs (In-content sub-sections only) ────────────────────────────────── */
@@ -61,16 +62,18 @@ export interface TooltipProps {
 }
 
 export function Tooltip({ content, children, side = 'top', align = 'center' }: TooltipProps) {
+  const portalContainer = useOverlayPortalContainer()
+
   return (
     <RadixTooltip.Provider delayDuration={200}>
       <RadixTooltip.Root>
         <RadixTooltip.Trigger asChild>{children}</RadixTooltip.Trigger>
-        <RadixTooltip.Portal>
+        <RadixTooltip.Portal container={portalContainer}>
           <RadixTooltip.Content
             side={side}
             align={align}
             sideOffset={4}
-            className="z-overlay rounded bg-sidebar px-2.5 py-1 text-xs text-white shadow-md animate-in fade-in-80"
+            className="z-popover rounded bg-sidebar px-2.5 py-1 text-xs text-white shadow-md animate-in fade-in-80"
           >
             {content}
             <RadixTooltip.Arrow className="fill-sidebar" />

@@ -9,6 +9,7 @@ export interface TopbarProps {
   onSearchChange?: (query: string) => void
   unreadNotifications?: number
   onNotificationClick?: () => void
+  notificationSlot?: React.ReactNode
   userName?: string
   userAvatar?: string
   onSignOut?: () => void
@@ -21,6 +22,7 @@ export function Topbar({
   onSearchChange,
   unreadNotifications = 0,
   onNotificationClick,
+  notificationSlot,
   userName = 'User',
   userAvatar,
   onSignOut,
@@ -45,7 +47,7 @@ export function Topbar({
       )}
     >
       {/* Left Search & Mobile Menu Button */}
-      <div className="flex items-center gap-3 flex-1 max-w-md">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 max-w-md">
         <button
           type="button"
           onClick={onToggleMobileSidebar}
@@ -55,7 +57,7 @@ export function Topbar({
           <span className="sr-only">Toggle Sidebar</span>
         </button>
 
-        <div className="relative w-full">
+        <div className="relative min-w-0 w-full">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input
             type="text"
@@ -67,7 +69,7 @@ export function Topbar({
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
         {/* Dev-only Role Switcher */}
         <DevRoleSwitcher />
 
@@ -84,19 +86,21 @@ export function Topbar({
         </button>
 
         {/* Notifications */}
-        <button
-          type="button"
-          onClick={onNotificationClick}
-          className="relative rounded-md p-2 text-soft hover:bg-line/40 hover:text-ink focus:outline-none"
-          title="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-          {unreadNotifications > 0 && (
-            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose font-mono text-[10px] font-bold text-white">
-              {unreadNotifications}
-            </span>
-          )}
-        </button>
+        {notificationSlot ?? (
+          <button
+            type="button"
+            onClick={onNotificationClick}
+            className="relative rounded-md p-2 text-soft hover:bg-line/40 hover:text-ink focus:outline-none"
+            title="Notifications"
+          >
+            <Bell className="h-4 w-4" />
+            {unreadNotifications > 0 && (
+              <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose font-mono text-[10px] font-bold text-white">
+                {unreadNotifications}
+              </span>
+            )}
+          </button>
+        )}
 
         <div className="h-5 w-[1px] bg-line mx-1" />
 

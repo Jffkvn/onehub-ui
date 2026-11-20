@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, Banknote } from 'lucide-react'
 import { Dialog } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
@@ -31,10 +31,12 @@ export function CreatePayrollModal({
   const createMutation = useCreatePayrollDraft()
 
   // Initialize selected IDs to all employees on first load
-  if (!initialized && employees.length > 0) {
-    setSelectedIds(employees.map((e) => e.id))
-    setInitialized(true)
-  }
+  useEffect(() => {
+    if (!initialized && employees.length > 0) {
+      setSelectedIds(employees.map((e) => e.id))
+      setInitialized(true)
+    }
+  }, [initialized, employees])
 
   // Filter employees based on search query
   const filteredEmployees = useMemo(() => {
@@ -235,6 +237,14 @@ export function CreatePayrollModal({
             })
           )}
         </div>
+
+        {createMutation.isError && (
+          <div role="alert" className="rounded-md bg-rose-tint p-3 text-xs text-rose">
+            {createMutation.error instanceof Error
+              ? createMutation.error.message
+              : 'Unable to create payroll draft. Please check selected period and staff.'}
+          </div>
+        )}
 
         {/* Footer Actions */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">

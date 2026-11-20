@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { QueryClientContext } from '@tanstack/react-query'
 import {
   createSupabaseAuthGateway,
   type AccessContext,
@@ -15,6 +16,10 @@ import {
   type AuthSession,
   type TotpEnrollment,
 } from './AuthGateway'
+import {
+  clearAllProtectedPendingOperations,
+  syncProtectedAuthSessionFromProvider,
+} from '@/lib/idempotency/pendingOperations'
 import type { UserRole } from '@/config/modules'
 
 export type AuthStatus =
@@ -32,6 +37,7 @@ interface AuthContextValue {
   session: AuthSession | null
   access: AccessContext | null
   verifiedFactorId?: string
+  authEpoch?: number
   devPreviewRole: UserRole | null
   setDevPreviewRole(role: UserRole | null): void
   signIn(email: string, password: string): Promise<void>
@@ -56,22 +62,94 @@ export function AuthProvider({
     () => suppliedGateway ?? createSupabaseAuthGateway(),
     [suppliedGateway],
   )
+  const queryClient = useContext(QueryClientContext)
   const [status, setStatus] = useState<AuthStatus>('initializing')
   const [session, setSession] = useState<AuthSession | null>(null)
   const [sessionResolved, setSessionResolved] = useState(false)
   const [access, setAccess] = useState<AccessContext | null>(null)
   const [verifiedFactorId, setVerifiedFactorId] = useState<string>()
   const [securityVersion, setSecurityVersion] = useState(0)
+  const [authEpoch, setAuthEpoch] = useState(0)
   const [devPreviewRole, setDevPreviewRole] = useState<UserRole | null>(null)
   const requestVersion = useRef(0)
+  const authEpochRef = useRef(0)
+  const lastUserIdRef = useRef<string | null>(null)
+  const lastProfileIdRef = useRef<string | null>(null)
+
+  const clearProtectedCache = useCallback(
+    (bumpEpoch = true) => {
+      if (bumpEpoch) {
+        authEpochRef.current += 1
+        setAuthEpoch(authEpochRef.current)
+      }
+      syncProtectedAuthSessionFromProvider({
+        identityKey: null,
+        authEpoch: authEpochRef.current,
+        isReady: false,
+        invalidate: true,
+        clearStorage: true,
+      })
+      if (!queryClient) return
+      void queryClient.cancelQueries()
+      queryClient.clear()
+    },
+    [queryClient],
+  )
+
+  useEffect(() => {
+    if (status === 'unauthenticated' || status === 'access_denied' || status === 'error') {
+      syncProtectedAuthSessionFromProvider({
+        identityKey: null,
+        authEpoch: authEpochRef.current,
+        isReady: false,
+        invalidate: true,
+      })
+      if (queryClient) {
+        void queryClient.cancelQueries()
+        queryClient.clear()
+      }
+    }
+  }, [queryClient, status])
 
   useEffect(() => {
     let active = true
     let unsubscribe: () => void = () => undefined
 
+    const handleSessionTransition = (nextSession: AuthSession | null) => {
+      const prevUserId = lastUserIdRef.current
+      const nextUserId = nextSession?.userId ?? null
+      const identityEnded = prevUserId !== null && nextUserId === null
+      const identityChanged = prevUserId !== null && nextUserId !== null && prevUserId !== nextUserId
+
+      if (identityEnded || identityChanged) {
+        requestVersion.current += 1
+        lastProfileIdRef.current = null
+        authEpochRef.current += 1
+        setAuthEpoch(authEpochRef.current)
+        syncProtectedAuthSessionFromProvider({
+          identityKey: nextUserId,
+          authEpoch: authEpochRef.current,
+          isReady: false,
+          invalidate: true,
+          clearStorage: true,
+        })
+        if (queryClient) {
+          void queryClient.cancelQueries()
+        }
+        setAccess(null)
+        setVerifiedFactorId(undefined)
+        setDevPreviewRole(null)
+        if (identityChanged && queryClient) {
+          queryClient.clear()
+        }
+      }
+      lastUserIdRef.current = nextUserId
+    }
+
     try {
       unsubscribe = gateway.subscribe((_event, nextSession) => {
         if (active) {
+          handleSessionTransition(nextSession)
           setSession(nextSession)
           setSessionResolved(true)
           if (!nextSession) {
@@ -97,6 +175,7 @@ export function AuthProvider({
       .getSession()
       .then((initialSession) => {
         if (active) {
+          handleSessionTransition(initialSession)
           setSession(initialSession)
           setSessionResolved(true)
           setStatus(initialSession ? 'loading_access' : 'unauthenticated')
@@ -110,11 +189,12 @@ export function AuthProvider({
       active = false
       unsubscribe()
     }
-  }, [gateway])
+  }, [gateway, queryClient])
 
   useEffect(() => {
     const version = ++requestVersion.current
     if (!sessionResolved || !session) return
+    const expectedUserId = session.userId
 
     Promise.all([
       gateway.loadAccessContext(),
@@ -122,52 +202,128 @@ export function AuthProvider({
       gateway.getAal(),
     ])
       .then(([nextAccess, factors, aal]) => {
-        if (requestVersion.current !== version) return
+        if (requestVersion.current !== version || lastUserIdRef.current !== expectedUserId) return
+
+        const nextProfileId = nextAccess.profile?.id ?? null
+        if (!nextAccess.profile || !nextAccess.isActive) {
+          lastProfileIdRef.current = null
+          clearProtectedCache()
+        } else if (lastProfileIdRef.current !== null && lastProfileIdRef.current !== nextProfileId) {
+          lastProfileIdRef.current = nextProfileId
+          clearProtectedCache()
+        } else {
+          lastProfileIdRef.current = nextProfileId
+        }
+
         setAccess(nextAccess)
         const factorId = factors.verifiedTotp[0]?.id
         setVerifiedFactorId(factorId)
 
         if (!nextAccess.profile || !nextAccess.isActive) {
+          syncProtectedAuthSessionFromProvider({
+            identityKey: null,
+            authEpoch: authEpochRef.current,
+            isReady: false,
+            invalidate: true,
+            clearStorage: true,
+          })
           setStatus('access_denied')
         } else if (factorId && aal !== 'aal2') {
+          syncProtectedAuthSessionFromProvider({
+            identityKey: expectedUserId ?? nextProfileId,
+            authEpoch: authEpochRef.current,
+            isReady: false,
+            invalidate: true,
+          })
           setStatus('mfa_challenge_required')
         } else if (nextAccess.mfaRequired && !factorId) {
+          syncProtectedAuthSessionFromProvider({
+            identityKey: expectedUserId ?? nextProfileId,
+            authEpoch: authEpochRef.current,
+            isReady: false,
+            invalidate: true,
+          })
           setStatus('mfa_enrollment_required')
         } else {
+          syncProtectedAuthSessionFromProvider({
+            identityKey: expectedUserId ?? nextProfileId,
+            authEpoch: authEpochRef.current,
+            isReady: true,
+          })
           setStatus('authenticated')
         }
       })
       .catch(() => {
         if (requestVersion.current === version) setStatus('error')
       })
-  }, [gateway, securityVersion, session, sessionResolved])
+  }, [clearProtectedCache, gateway, securityVersion, session, sessionResolved])
 
   const signIn = useCallback(
     async (email: string, password: string) => {
+      clearProtectedCache(false)
       const nextSession = await gateway.signIn(email, password)
+      requestVersion.current += 1
+      lastUserIdRef.current = nextSession.userId
+      lastProfileIdRef.current = null
+      clearProtectedCache()
+      setAccess(null)
+      setVerifiedFactorId(undefined)
+      setDevPreviewRole(null)
       setStatus('loading_access')
       setSession(nextSession)
       setSessionResolved(true)
     },
-    [gateway],
+    [clearProtectedCache, gateway],
   )
   const acceptInvite = useCallback(
     async (tokenHash: string) => {
+      clearProtectedCache(false)
       const nextSession = await gateway.acceptInvite(tokenHash)
+      requestVersion.current += 1
+      lastUserIdRef.current = nextSession.userId
+      lastProfileIdRef.current = null
+      clearProtectedCache()
+      setAccess(null)
+      setVerifiedFactorId(undefined)
+      setDevPreviewRole(null)
       setStatus('loading_access')
       setSession(nextSession)
       setSessionResolved(true)
     },
-    [gateway],
+    [clearProtectedCache, gateway],
   )
   const signOut = useCallback(async () => {
-    await gateway.signOut()
+    requestVersion.current += 1
+    lastUserIdRef.current = null
+    lastProfileIdRef.current = null
+    authEpochRef.current += 1
+    setAuthEpoch(authEpochRef.current)
+    syncProtectedAuthSessionFromProvider({
+      identityKey: null,
+      authEpoch: authEpochRef.current,
+      isReady: false,
+      invalidate: true,
+      clearStorage: true,
+    })
+    if (queryClient) {
+      void queryClient.cancelQueries()
+    }
     setSession(null)
     setSessionResolved(true)
     setAccess(null)
     setVerifiedFactorId(undefined)
+    setDevPreviewRole(null)
     setStatus('unauthenticated')
-  }, [gateway])
+    try {
+      await gateway.signOut()
+    } finally {
+      clearAllProtectedPendingOperations()
+      if (queryClient) {
+        void queryClient.cancelQueries()
+        queryClient.clear()
+      }
+    }
+  }, [gateway, queryClient])
   const setInitialPassword = useCallback(
     (password: string) => gateway.setInitialPassword(password),
     [gateway],
@@ -188,6 +344,7 @@ export function AuthProvider({
       session,
       access,
       verifiedFactorId,
+      authEpoch,
       devPreviewRole,
       setDevPreviewRole,
       signIn,
@@ -201,6 +358,7 @@ export function AuthProvider({
     [
       acceptInvite,
       access,
+      authEpoch,
       devPreviewRole,
       enrollTotp,
       refreshSecurity,

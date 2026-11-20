@@ -101,7 +101,9 @@ export function Sidebar({
               {group.items.map((item) => {
                 const isActive =
                   activePath === item.path ||
-                  (item.path !== '/dashboard' && activePath.startsWith(item.path))
+                  (item.path !== '/dashboard' &&
+                    item.path !== '/inventory' &&
+                    activePath.startsWith(`${item.path}/`))
 
                 return (
                   <button

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, GitBranch } from 'lucide-react'
 import { Dialog } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
@@ -31,10 +31,12 @@ export function CreateAmendmentModal({
   const { data: employees = [], isLoading } = useEligibleEmployees()
   const amendMutation = useCreatePayrollAmendment()
 
-  if (!initialized && employees.length > 0) {
-    setSelectedIds(employees.map((e) => e.id))
-    setInitialized(true)
-  }
+  useEffect(() => {
+    if (!initialized && employees.length > 0) {
+      setSelectedIds(employees.map((e) => e.id))
+      setInitialized(true)
+    }
+  }, [initialized, employees])
 
   const filteredEmployees = useMemo(() => {
     if (!searchQuery.trim()) return employees
@@ -246,6 +248,14 @@ export function CreateAmendmentModal({
             })
           )}
         </div>
+
+        {amendMutation.isError && (
+          <div role="alert" className="rounded-md bg-rose-tint p-3 text-xs text-rose">
+            {amendMutation.error instanceof Error
+              ? amendMutation.error.message
+              : 'Unable to create payroll amendment run. Please try again.'}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">

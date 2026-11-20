@@ -112,6 +112,7 @@ Textarea.displayName = 'Textarea'
 
 export interface FormGroupProps {
   label?: string
+  htmlFor?: string
   hint?: string
   error?: string
   required?: boolean
@@ -121,18 +122,20 @@ export interface FormGroupProps {
 
 export function FormGroup({
   label,
+  htmlFor,
   hint,
   error,
   required,
   children,
   className,
 }: FormGroupProps) {
-  const id = useId()
+  const generatedId = useId()
+  const labelFor = htmlFor ?? generatedId
 
   return (
     <div className={cn('space-y-1.5', className)}>
       {label && (
-        <Label htmlFor={id} required={required}>
+        <Label htmlFor={labelFor} required={required}>
           {label}
         </Label>
       )}

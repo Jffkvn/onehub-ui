@@ -24,6 +24,47 @@ describe('Dialog Primitive', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
     expect(handleOpenChange).toHaveBeenCalledWith(false)
   })
+  it('prompts before closing when hasUnsavedChanges is true and supports Keep editing vs Discard changes', () => {
+    const handleOpenChange = vi.fn()
+    render(
+      <Dialog open hasUnsavedChanges onOpenChange={handleOpenChange} title="Edit Record">
+        <p>Form fields</p>
+      </Dialog>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(handleOpenChange).not.toHaveBeenCalled()
+    const alert = screen.getByRole('alertdialog')
+    expect(alert).toHaveTextContent(/unsaved changes/i)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(handleOpenChange).not.toHaveBeenCalled()
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
+    expect(handleOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it('renders a viewport-bounded flex scroll layout with a pinned footer slot', () => {
+    render(
+      <Dialog
+        open
+        title="Add Pay Grade"
+        footer={<button type="button">Save Pay Grade</button>}
+      >
+        <p>Long body content</p>
+      </Dialog>,
+    )
+
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.className).toContain('max-h-[calc(100dvh-1.5rem)]')
+    expect(dialog.className).toContain('flex-col')
+    const saveBtn = screen.getByRole('button', { name: 'Save Pay Grade' })
+    expect(saveBtn).toBeInTheDocument()
+    expect(saveBtn.parentElement?.className).toContain('shrink-0')
+  })
 })
 
 describe('SlideOver Primitive', () => {

@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import * as RadixDialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
+import { OverlayPortalContext } from './OverlayPortalContext'
 import { cn } from '@/lib/utils'
 
 export interface SlideOverProps {
@@ -28,6 +29,8 @@ export function SlideOver({
   widthClass = 'max-w-xl',
   trigger,
 }: SlideOverProps) {
+  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(null)
+
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       {trigger && <RadixDialog.Trigger asChild>{trigger}</RadixDialog.Trigger>}
@@ -44,30 +47,33 @@ export function SlideOver({
             className,
           )}
         >
-          {/* Header */}
-          <div className="flex items-start justify-between border-b border-line p-6 pb-4">
-            <div>
-              {subtitle && <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-0.5">{subtitle}</p>}
-              <div className="flex items-center gap-3">
-                {title && <RadixDialog.Title className="font-display text-xl font-bold text-ink">{title}</RadixDialog.Title>}
-                {statusPill}
+          <OverlayPortalContext.Provider value={portalContainer}>
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-line p-6 pb-4">
+              <div>
+                {subtitle && <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-0.5">{subtitle}</p>}
+                <div className="flex items-center gap-3">
+                  {title && <RadixDialog.Title className="font-display text-xl font-bold text-ink">{title}</RadixDialog.Title>}
+                  {statusPill}
+                </div>
               </div>
+              <RadixDialog.Close className="rounded-md p-1.5 text-muted hover:bg-line/50 hover:text-ink focus:outline-none focus:ring-2 focus:ring-emerald">
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close drawer</span>
+              </RadixDialog.Close>
             </div>
-            <RadixDialog.Close className="rounded-md p-1.5 text-muted hover:bg-line/50 hover:text-ink focus:outline-none focus:ring-2 focus:ring-emerald">
-              <X className="h-5 w-5" />
-              <span className="sr-only">Close drawer</span>
-            </RadixDialog.Close>
-          </div>
 
-          {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">{children}</div>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">{children}</div>
 
-          {/* Sticky Action Footer */}
-          {footer && (
-            <div className="sticky bottom-0 border-t border-line bg-surface/95 p-4 backdrop-blur-sm">
-              <div className="flex items-center justify-end gap-3">{footer}</div>
-            </div>
-          )}
+            {/* Sticky Action Footer */}
+            {footer && (
+              <div className="sticky bottom-0 border-t border-line bg-surface/95 p-4 backdrop-blur-sm">
+                <div className="flex items-center justify-end gap-3">{footer}</div>
+              </div>
+            )}
+          </OverlayPortalContext.Provider>
+          <div ref={setPortalContainer} />
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>

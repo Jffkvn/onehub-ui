@@ -84,6 +84,7 @@ const config: Config = {
         topbar:    '50',
         overlay:   '60',
         sheet:     '70',
+        popover:   '75',
         toast:     '80',
       },
     },

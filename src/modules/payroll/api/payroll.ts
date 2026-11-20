@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { z } from 'zod'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import type {
   PayrollDraftItem,
@@ -88,7 +89,7 @@ function relation(value: unknown): Row {
 
 export function mapPayrollRun(row: Row): PayrollRun {
   const period = relation(row.payroll_periods)
-  const payments = (row.payroll_payments as Row[] | undefined) ?? []
+  const payment = relation(row.payroll_payments) as Row | null | undefined
   return {
     id: String(row.id),
     periodId: String(row.period_id),
@@ -109,7 +110,7 @@ export function mapPayrollRun(row: Row): PayrollRun {
     totalNet: number(row.total_net),
     approvedAt: text(row.approved_at),
     items: ((row.payroll_items as Row[] | undefined) ?? []).map(mapItem),
-    payment: mapPayment(payments[0]),
+    payment: mapPayment(payment ?? undefined),
   }
 }
 
@@ -118,17 +119,34 @@ export const payload = (items: PayrollDraftItem[]) =>
     employee_id: item.employeeId,
     percent_of_month_worked: item.percentOfMonthWorked,
     overtime_hours: item.overtimeHours,
-    line_items: item.lineItems.map(({ kind, code, description, amount }) => ({
-      kind,
-      code,
-      description,
-      amount,
-    })),
+    // Automatic STAFF_ADVANCE lines are regenerated server-side from active staff_advances.
+    line_items: item.lineItems
+      .filter((line) => line.code.trim().toUpperCase() !== 'STAFF_ADVANCE')
+      .map(({ kind, code, description, amount }) => ({
+        kind,
+        code,
+        description,
+        amount,
+      })),
   }))
+
+const payeStatusSchema = z.object({
+  effective_from: z.string().date().nullable(),
+  applied_effective_from: z.string().date().nullable(),
+  refresh_required: z.boolean(),
+}).transform((status) => ({
+  effectiveFrom: status.effective_from,
+  appliedEffectiveFrom: status.applied_effective_from,
+  refreshRequired: status.refresh_required,
+}))
+
+export type PayrollPayeStatus = z.output<typeof payeStatusSchema>
 
 export interface PayrollApi {
   list(): Promise<PayrollRun[]>
   get(id: string): Promise<PayrollRun>
+  payeStatus(id: string): Promise<PayrollPayeStatus>
+  refreshPaye(id: string, reason: string): Promise<boolean>
   eligibleEmployees(): Promise<PayrollEmployee[]>
   create(periodStart: string, items: PayrollDraftItem[]): Promise<string>
   replace(id: string, items: PayrollDraftItem[], reason: string): Promise<void>
@@ -212,6 +230,13 @@ export const payrollApi: PayrollApi = {
   list,
   get,
   eligibleEmployees,
+  payeStatus: async (id) =>
+    payeStatusSchema.parse(await rpc('rpc_get_payroll_paye_status', { p_run_id: id })),
+  refreshPaye: async (id, reason) =>
+    z.boolean().parse(await rpc('rpc_refresh_payroll_draft_settings', {
+      p_run_id: id,
+      p_reason: reason,
+    })),
   create: async (periodStart, items) =>
     String(
       await rpc('create_payroll_draft', {
@@ -288,13 +313,20 @@ export function useEligibleEmployees() {
   })
 }
 
+export class PayrollRefreshError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'PayrollRefreshError'
+  }
+}
+
 export function useCreatePayrollDraft() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ periodStart, items }: { periodStart: string; items: PayrollDraftItem[] }) =>
       payrollApi.create(periodStart, items),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] })
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] })
     },
   })
 }
@@ -311,9 +343,54 @@ export function useReplacePayrollDraft() {
       items: PayrollDraftItem[]
       reason: string
     }) => payrollApi.replace(id, items, reason),
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] })
-      void queryClient.invalidateQueries({ queryKey: ['payroll', 'run', variables.id] })
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] })
+      try {
+        await queryClient.refetchQueries(
+          { queryKey: ['payroll', 'run', variables.id], exact: true },
+          { throwOnError: true },
+        )
+      } catch (error) {
+        throw new PayrollRefreshError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to refresh updated payroll run from the server.',
+        )
+      }
+    },
+  })
+}
+
+export function usePayrollPayeStatus(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['payroll', 'paye-status', id],
+    enabled: enabled && Boolean(id),
+    queryFn: () => payrollApi.payeStatus(id),
+    retry: false,
+  })
+}
+
+export function useRefreshPayrollPaye() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      payrollApi.refreshPaye(id, reason),
+    onSuccess: async (_updated, { id }) => {
+      try {
+        await Promise.all([
+          queryClient.refetchQueries(
+            { queryKey: ['payroll', 'run', id], exact: true, type: 'active' },
+            { throwOnError: true },
+          ),
+          queryClient.refetchQueries(
+            { queryKey: ['payroll', 'paye-status', id], exact: true, type: 'active' },
+            { throwOnError: true },
+          ),
+        ])
+      } catch {
+        throw new PayrollRefreshError('PAYE was confirmed on the server. Reload payroll totals before continuing.')
+      }
+      await queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] })
     },
   })
 }
@@ -323,9 +400,11 @@ export function useApprovePayrollRun() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       payrollApi.approve(id, reason),
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] })
-      void queryClient.invalidateQueries({ queryKey: ['payroll', 'run', variables.id] })
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] }),
+        queryClient.invalidateQueries({ queryKey: ['payroll', 'run', variables.id] }),
+      ])
     },
   })
 }
@@ -344,8 +423,8 @@ export function useCreatePayrollAmendment() {
       reason: string
       items: PayrollDraftItem[]
     }) => payrollApi.amend(id, type, reason, items),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] })
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] })
     },
   })
 }
@@ -360,9 +439,11 @@ export function useRecordPayrollPayment() {
       method: PayrollPayment['method']
       notes?: string
     }) => payrollApi.recordPayment(input),
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] })
-      void queryClient.invalidateQueries({ queryKey: ['payroll', 'run', variables.runId] })
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] }),
+        queryClient.invalidateQueries({ queryKey: ['payroll', 'run', variables.runId] }),
+      ])
     },
   })
 }
