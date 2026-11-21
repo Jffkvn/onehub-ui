@@ -21,7 +21,7 @@ export function TotpChallengePage() {
       description="Use the current 6-digit code from your enrolled authenticator app (e.g. Google Authenticator)."
     >
       <div className="space-y-4">
-        <FormGroup label="Six-digit Security Code" error={error}>
+        <FormGroup label="Six-digit Security Code" htmlFor="challenge-code" error={error}>
           <Input
             inputMode="numeric"
             autoComplete="one-time-code"
@@ -54,7 +54,7 @@ export function TotpChallengePage() {
               .verifyTotp(auth.verifiedFactorId, code)
               .then(() => {
                 auth.refreshSecurity()
-                void navigate('/dashboard', { replace: true })
+                void navigate('/', { replace: true })
               })
               .catch(() => {
                 setError('That code was not accepted. Wait for a new 30-second code and try again.')

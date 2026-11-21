@@ -2,7 +2,6 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { AppShell } from '@/components/patterns/AppShell'
-import { PagePlaceholder } from '@/components/patterns/PagePlaceholder'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { RequireAuth } from '@/modules/auth/RequireAuth'
 import { RequirePermission } from '@/modules/auth/RequirePermission'
@@ -11,6 +10,10 @@ import { CASH_ALLOWED_ROLES, isItemPermitted, isMonitorOnlyAccount, NAV_ITEMS } 
 import { MOCK_ROLE_PERMISSIONS } from '@/components/patterns/DevRoleSwitcher'
 
 // Lazy-loaded Auth & System pages
+const DashboardPage = lazy(() => import('@/modules/system/DashboardPage'))
+const UserAccessPage = lazy(() => import('@/modules/system/UserAccessPage'))
+const CompanySettingsPage = lazy(() => import('@/modules/system/CompanySettingsPage'))
+const AuditLogPage = lazy(() => import('@/modules/system/AuditLogPage'))
 const AnnouncementsPage = lazy(() => import('@/modules/announcements/AnnouncementsPage'))
 const LeavePage = lazy(() => import('@/modules/leave/pages/LeavePage'))
 const ReportsPage = lazy(() => import('@/modules/reports/ReportsPage'))
@@ -215,7 +218,7 @@ function ProtectedShellLayout() {
         <Routes>
           {/* Overview (monitor-only display accounts are blocked from staff portals) */}
           <Route element={<RequirePermission disallowMonitorOnly />}>
-            <Route path="/dashboard" element={<PagePlaceholder title="Dashboard" task="TASK-09" />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/my" element={<MyWorkspacePage />} />
             <Route path="/my/profile" element={<MyWorkspacePage />} />
           </Route>
@@ -409,13 +412,13 @@ function ProtectedShellLayout() {
             <Route path="/system/reports" element={<ReportsPage />} />
           </Route>
           <Route element={<RequirePermission permission="company.manage" />}>
-            <Route path="/system/settings" element={<PagePlaceholder title="Company Settings" task="TASK-08" />} />
+            <Route path="/system/settings" element={<CompanySettingsPage />} />
           </Route>
           <Route element={<RequirePermission permission="audit.read" />}>
-            <Route path="/system/audit" element={<PagePlaceholder title="Audit Log" task="TASK-08" />} />
+            <Route path="/system/audit" element={<AuditLogPage />} />
           </Route>
-          <Route element={<RequirePermission permission="roles.read" />}>
-            <Route path="/system/users" element={<PagePlaceholder title="User Access & Roles" task="TASK-08" />} />
+          <Route element={<RequirePermission permission="users.read" />}>
+            <Route path="/system/users" element={<UserAccessPage />} />
           </Route>
 
           {/* Root Redirect */}

@@ -5,6 +5,8 @@ import type { UserRole } from '@/config/modules'
 export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   // Aligns with Launch DB permissions: super_admin cash_advances.* stays excluded until owner confirms policy.
   super_admin: [
+    'users.read',
+    'users.manage',
     'announcements.manage',
     'announcements.read',
     'insurance.manage',
@@ -88,6 +90,8 @@ export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   ],
 
   hr_admin: [
+    'users.read',
+    'users.manage',
     'announcements.manage',
     'announcements.read',
     'insurance.manage',
@@ -224,18 +228,6 @@ export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'cash_advances.request',
     'inventory.read',
     'inventory.request',
-    'service_requests.intake',
-    'service_requests.read',
-    'service_requests.dispatch',
-    'service_requests.review',
-    'service_requests.report_provider',
-    'service_requests.monitor',
-    'service_visits.read_assigned',
-    'service_visits.work_assigned',
-    'service_evidence.read',
-    'service_alerts.read',
-    'service_alerts.ack',
-    'service_alerts.resolve',
   ],
 
   employee: [
@@ -249,8 +241,6 @@ export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'training.read_self',
     'staff_advances.read_self',
     'employee_documents.read',
-    'service_visits.read_assigned',
-    'service_visits.work_assigned',
   ],
 
   service_desk: [
@@ -282,6 +272,48 @@ export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'service_alerts.read',
     'service_alerts.ack',
     'service_alerts.resolve',
+  ],
+
+  service_coordinator: [
+    'announcements.read',
+    'attendance.clock_self',
+    'attendance.read_self',
+    'equipment_requests.read_self',
+    'insurance.read_self',
+    'leave.read_self',
+    'payroll.self_read',
+    'performance.read_self',
+    'reimbursements.read_self',
+    'staff_advances.read_self',
+    'training.read_self',
+    'service_requests.intake',
+    'service_requests.read',
+    'service_requests.dispatch',
+    'service_requests.review',
+    'service_requests.report_provider',
+    'service_requests.monitor',
+    'service_visits.read_assigned',
+    'service_visits.work_assigned',
+    'service_evidence.read',
+    'service_alerts.read',
+    'service_alerts.ack',
+    'service_alerts.resolve',
+  ],
+
+  service_technician: [
+    'announcements.read',
+    'attendance.clock_self',
+    'attendance.read_self',
+    'equipment_requests.read_self',
+    'insurance.read_self',
+    'leave.read_self',
+    'payroll.self_read',
+    'performance.read_self',
+    'reimbursements.read_self',
+    'staff_advances.read_self',
+    'training.read_self',
+    'service_visits.read_assigned',
+    'service_visits.work_assigned',
   ],
 
   service_monitor: [

@@ -13,6 +13,7 @@ const contractPermissions = readFileSync(permissionsPath, 'utf-8')
 const validPermissions = [
   ...new Set([
     ...contractPermissions,
+    'users.read', // 0062_user_administration
     'announcements.read',
     'announcements.manage',
     'projects.read',

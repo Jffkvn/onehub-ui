@@ -569,3 +569,33 @@ it('routes a warehouse reviewer to employee equipment requests', async () => {
   renderRouter('/inventory/employee-requests', ['warehouse_manager'], ['inventory.issue'])
   expect(await screen.findByRole('heading', { name: 'Employee equipment requests' })).toBeInTheDocument()
 })
+
+describe('Batch 7F workspace routes', () => {
+  it.each([
+    ['/system/settings', 'Company Settings', 'company.manage'],
+    ['/system/audit', 'Audit Log', 'audit.read'],
+  ])('requires the matching system grant for %s', async (path, title, permission) => {
+    const allowed = renderRouter(path, ['super_admin'], [permission])
+    expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument()
+    allowed.unmount()
+
+    renderRouter(path, ['hr_admin'], ['users.read', 'users.manage'])
+    expect(await screen.findByRole('heading', { name: /Permission Denied/i })).toBeInTheDocument()
+  })
+
+  it('opens User Access for HR with users.read and rejects roles.read by itself', async () => {
+    const hr = renderRouter('/system/users', ['hr_admin'], ['users.read', 'users.manage'])
+    expect(await screen.findByRole('heading', { name: 'User Access & Roles' })).toBeInTheDocument()
+    hr.unmount()
+
+    renderRouter('/system/users', ['employee'], ['roles.read'])
+    expect(await screen.findByRole('heading', { name: /Permission Denied/i })).toBeInTheDocument()
+  })
+
+  it('gives the service technician a My Service Jobs link and no construction dashboard link', async () => {
+    renderRouter('/dashboard', ['service_technician'], ['service_visits.read_assigned', 'service_visits.work_assigned'])
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /My Service Jobs/i })).toHaveAttribute('href', '/services/my-jobs')
+    expect(screen.queryByRole('link', { name: /Project Cash|Daily Tracker/i })).not.toBeInTheDocument()
+  })
+})

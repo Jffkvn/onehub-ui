@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -7,7 +7,7 @@ import { ShieldCheck, AlertCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
 import { Input, FormGroup } from '@/components/ui/Input'
-import { Skeleton } from '@/components/ui/Skeleton'
+import type { AuthSession } from './AuthGateway'
 import { AuthLayout } from './AuthLayout'
 import { useAuth } from './AuthProvider'
 
@@ -28,10 +28,10 @@ export function InvitePage() {
   const tokenHash = params.get('token_hash')
   const auth = useAuth()
   const navigate = useNavigate()
-  const [accepted, setAccepted] = useState(false)
-  const [inviteError, setInviteError] = useState(
-    tokenHash ? '' : 'This invitation link is invalid or incomplete.',
-  )
+  const passwordId = useId()
+  const confirmationId = useId()
+  const pendingInvite = useRef<{ token: string; request: Promise<AuthSession> } | null>(null)
+  const [inviteError, setInviteError] = useState('')
 
   const {
     register,
@@ -41,54 +41,47 @@ export function InvitePage() {
     resolver: zodResolver(passwordSchema),
   })
 
-  useEffect(() => {
+  async function activate({ password }: PasswordValues) {
     if (!tokenHash) return
-    let active = true
-    auth
-      .acceptInvite(tokenHash)
-      .then(() => {
-        if (active) setAccepted(true)
-      })
-      .catch(() => {
-        if (active) setInviteError('This invitation link is invalid or has expired.')
-      })
-    return () => {
-      active = false
+    setInviteError('')
+    const attempt = pendingInvite.current?.token === tokenHash
+      ? pendingInvite.current
+      : { token: tokenHash, request: auth.acceptInvite(tokenHash) }
+    pendingInvite.current = attempt
+
+    const invitedSession = await attempt.request.catch(() => null)
+    if (!invitedSession) {
+      pendingInvite.current = null
+      setInviteError('This invitation link is invalid or has expired.')
+      return
     }
-  }, [auth, tokenHash])
+
+    try {
+      await auth.setInitialPassword(password, invitedSession.userId)
+      void navigate('/', { replace: true })
+    } catch {
+      setInviteError('Your password could not be saved. Request a new invitation if this continues.')
+    }
+  }
 
   return (
     <AuthLayout
-      eyebrow="Invitation Accepted"
+      eyebrow="OneHub invitation"
       title="Create your password"
       description="Choose a private password to finish activating your OneHub account."
     >
-      {inviteError && (
+      {(!tokenHash || inviteError) && (
         <div className="flex items-center gap-2 rounded-md bg-rose-tint p-3 text-xs text-rose">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          <span>{inviteError}</span>
+          <span>{inviteError || 'This invitation link is invalid or incomplete.'}</span>
         </div>
       )}
 
-      {accepted ? (
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            void handleSubmit(async ({ password }) => {
-              setInviteError('')
-              try {
-                await auth.setInitialPassword(password)
-                void navigate('/dashboard', { replace: true })
-              } catch {
-                setInviteError(
-                  'Your password could not be saved. Request a new invitation if this continues.',
-                )
-              }
-            })(e)
-          }}
-        >
-          <FormGroup label="New Password" hint="At least 10 characters" error={errors.password?.message}>
+      {tokenHash && (
+        <form className="space-y-4" onSubmit={(event) => { void handleSubmit(activate)(event) }}>
+          <FormGroup label="New Password" htmlFor={passwordId} hint="At least 10 characters" error={errors.password?.message}>
             <Input
+              id={passwordId}
               type="password"
               placeholder="••••••••••••"
               autoComplete="new-password"
@@ -97,8 +90,9 @@ export function InvitePage() {
             />
           </FormGroup>
 
-          <FormGroup label="Confirm Password" error={errors.confirmPassword?.message}>
+          <FormGroup label="Confirm Password" htmlFor={confirmationId} error={errors.confirmPassword?.message}>
             <Input
+              id={confirmationId}
               type="password"
               placeholder="••••••••••••"
               autoComplete="new-password"
@@ -118,12 +112,7 @@ export function InvitePage() {
             Activate account
           </Button>
         </form>
-      ) : !inviteError ? (
-        <div className="flex flex-col items-center justify-center p-6 space-y-3">
-          <Skeleton shape="circle" className="h-10 w-10 border-2 border-emerald" />
-          <p className="font-body text-xs text-soft animate-pulse">Checking invitation details…</p>
-        </div>
-      ) : null}
+      )}
     </AuthLayout>
   )
 }

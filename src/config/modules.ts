@@ -11,18 +11,23 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-export type UserRole =
-  | 'super_admin'
-  | 'hr_admin'
-  | 'employee'
-  | 'coordinator'
-  | 'project_manager'
-  | 'warehouse_manager'
-  | 'cfo'
-  | 'managing_director'
-  | 'service_desk'
-  | 'service_monitor'
-  | 'service_dispatch_backup'
+export const userRoleKeys = [
+  'super_admin',
+  'hr_admin',
+  'employee',
+  'coordinator',
+  'project_manager',
+  'warehouse_manager',
+  'cfo',
+  'managing_director',
+  'service_desk',
+  'service_monitor',
+  'service_dispatch_backup',
+  'service_coordinator',
+  'service_technician',
+] as const
+
+export type UserRole = (typeof userRoleKeys)[number]
 
 export type ModuleKey =
   | 'home'
@@ -47,19 +52,7 @@ export interface OneHubModule {
   showInMobileBar?: boolean
 }
 
-const allRoles: readonly UserRole[] = [
-  'super_admin',
-  'hr_admin',
-  'employee',
-  'coordinator',
-  'project_manager',
-  'warehouse_manager',
-  'cfo',
-  'managing_director',
-  'service_desk',
-  'service_monitor',
-  'service_dispatch_backup',
-]
+const allRoles = userRoleKeys
 
 export const oneHubModules: readonly OneHubModule[] = [
   {
@@ -203,7 +196,7 @@ export const roleLabels: Record<UserRole, string> = {
   super_admin: 'Super Administrator',
   hr_admin: 'HR Administrator',
   employee: 'Employee',
-  coordinator: 'Project Coordinator',
+  coordinator: 'Tower Coordinator',
   project_manager: 'Project Manager',
   warehouse_manager: 'Warehouse Manager',
   cfo: 'Chief Finance Officer',
@@ -211,4 +204,6 @@ export const roleLabels: Record<UserRole, string> = {
   service_desk: 'Service Desk',
   service_monitor: 'Operations Monitor',
   service_dispatch_backup: 'Backup Service Dispatcher',
+  service_coordinator: 'Service Coordinator',
+  service_technician: 'Service Technician',
 }

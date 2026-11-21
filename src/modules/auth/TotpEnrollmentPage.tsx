@@ -65,8 +65,9 @@ export function TotpEnrollmentPage() {
             )}
           </div>
 
-          <FormGroup label="Six-digit Code" error={error}>
+          <FormGroup label="Six-digit Code" htmlFor="enrollment-code" error={error}>
             <Input
+              id="enrollment-code"
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={6}
@@ -97,7 +98,7 @@ export function TotpEnrollmentPage() {
                 .verifyTotp(enrollment.factorId, code)
                 .then(() => {
                   auth.refreshSecurity()
-                  void navigate('/dashboard', { replace: true })
+                  void navigate('/', { replace: true })
                 })
                 .catch(() => {
                   setError('That code was not accepted. Wait for a new code and try again.')

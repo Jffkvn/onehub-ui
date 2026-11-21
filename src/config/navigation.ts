@@ -492,7 +492,7 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/system/users',
     icon: Key,
     section: 'System',
-    permission: 'roles.read',
+    permission: 'users.read',
   },
 ]
 

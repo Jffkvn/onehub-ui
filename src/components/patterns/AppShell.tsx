@@ -2,7 +2,10 @@ import React, { useState } from 'react'
 import { Sidebar, type NavGroup, type NavItem as SidebarNavItem } from './Sidebar'
 import { Topbar } from './Topbar'
 import { SlideOver } from '@/components/ui/SlideOver'
-import { getPermittedNav } from '@/config/navigation'
+import { getPermittedNav, isMonitorOnlyAccount } from '@/config/navigation'
+import { roleLabels } from '@/config/modules'
+import { useProtectedIdentityScope } from '@/lib/idempotency/pendingOperations'
+import { useCompanyProfile } from '@/modules/system/companyProfile'
 import { useAuth } from '@/modules/auth/AuthProvider'
 import { NotificationBell } from '@/modules/notifications/NotificationBell'
 import { MOCK_ROLE_PERMISSIONS } from './DevRoleSwitcher'
@@ -52,16 +55,14 @@ export function AppShell({
   const activeRoles =
     import.meta.env.DEV && devPreviewRole ? [devPreviewRole] : access?.roleKeys ?? []
 
-  const activeRoleName =
-    suppliedUserRole ||
-    (import.meta.env.DEV && devPreviewRole
-      ? devPreviewRole
-      : access?.roleKeys[0] ?? 'employee')
+  const activeRoleName = suppliedUserRole || roleLabels[activeRoles[0] ?? 'employee']
+  const scope = useProtectedIdentityScope(auth)
+  const company = useCompanyProfile(scope, !suppliedOrgName && !isMonitorOnlyAccount(activeRoles))
 
   const userName =
     suppliedUserName || access?.profile?.displayName || session?.email?.split('@')[0] || 'User'
   const userAvatar = suppliedUserAvatar || access?.profile?.avatarPath
-  const orgName = suppliedOrgName || 'Egypro Uganda'
+  const orgName = suppliedOrgName || company.data?.name || 'Egypro Uganda'
   const orgSubtitle = suppliedOrgSubtitle || 'UGX · Kampala Headquarters'
 
   // Filter navigation dynamically based on active permissions and roles if groups not explicitly passed

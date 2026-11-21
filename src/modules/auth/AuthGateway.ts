@@ -1,3 +1,4 @@
+import { userRoleKeys } from '@/config/modules'
 import { z } from 'zod'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import type { UserRole } from '@/config/modules'
@@ -51,19 +52,7 @@ export interface AuthGateway {
   getAal(): Promise<'aal1' | 'aal2'>
 }
 
-const userRoles = z.enum([
-  'super_admin',
-  'hr_admin',
-  'employee',
-  'coordinator',
-  'project_manager',
-  'warehouse_manager',
-  'cfo',
-  'managing_director',
-  'service_desk',
-  'service_monitor',
-  'service_dispatch_backup',
-])
+const userRoles = z.enum(userRoleKeys)
 
 const accessContextSchema = z.object({
   profile: z

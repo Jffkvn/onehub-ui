@@ -41,8 +41,8 @@ interface AuthContextValue {
   devPreviewRole: UserRole | null
   setDevPreviewRole(role: UserRole | null): void
   signIn(email: string, password: string): Promise<void>
-  acceptInvite(tokenHash: string): Promise<void>
-  setInitialPassword(password: string): Promise<void>
+  acceptInvite(tokenHash: string): Promise<AuthSession>
+  setInitialPassword(password: string, invitedUserId: string): Promise<void>
   signOut(): Promise<void>
   enrollTotp(): Promise<TotpEnrollment>
   verifyTotp(factorId: string, code: string): Promise<void>
@@ -289,6 +289,7 @@ export function AuthProvider({
       setStatus('loading_access')
       setSession(nextSession)
       setSessionResolved(true)
+      return nextSession
     },
     [clearProtectedCache, gateway],
   )
@@ -325,7 +326,11 @@ export function AuthProvider({
     }
   }, [gateway, queryClient])
   const setInitialPassword = useCallback(
-    (password: string) => gateway.setInitialPassword(password),
+    async (password: string, invitedUserId: string) => {
+      const current = await gateway.getSession()
+      if (current?.userId !== invitedUserId) throw new Error('The invited account is no longer signed in.')
+      await gateway.setInitialPassword(password)
+    },
     [gateway],
   )
   const enrollTotp = useCallback(() => gateway.enrollTotp(), [gateway])
