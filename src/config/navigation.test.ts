@@ -31,6 +31,7 @@ const validPermissions = [
     'insurance.read_self',
     'insurance.read',
     'insurance.manage',
+    'equipment_requests.read_self',
     'reimbursements.read_self',
     'reimbursements.read_all',
     'reimbursements.review',

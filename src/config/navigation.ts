@@ -163,6 +163,14 @@ export const NAV_ITEMS: NavItem[] = [
     disallowMonitorOnly: true,
   },
   {
+    key: 'my-equipment',
+    label: 'My Equipment',
+    path: '/my/assets',
+    icon: Wrench,
+    section: 'Overview',
+    permission: 'equipment_requests.read_self',
+  },
+  {
     key: 'my-reimbursements',
     label: 'My Reimbursements',
     path: '/my/reimbursements',
@@ -414,6 +422,23 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Layers,
     section: 'Inventory',
     anyOf: ['inventory.receipt', 'inventory.adjust'],
+  },
+
+  {
+    key: 'employee-equipment',
+    label: 'Employee Equipment Requests',
+    path: '/inventory/employee-requests',
+    icon: ClipboardList,
+    section: 'Inventory',
+    anyOf: ['inventory.issue', 'inventory.approve'],
+  },
+  {
+    key: 'warehouse-settings',
+    label: 'Warehouse Approval Settings',
+    path: '/inventory/settings',
+    icon: Settings,
+    section: 'Inventory',
+    permission: 'inventory.manage_settings',
   },
 
   // ─── Custody ──────────────────────────────────────────────────────────────

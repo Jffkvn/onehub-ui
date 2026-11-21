@@ -554,3 +554,18 @@ describe('AppRouter RBAC & Navigation (DEF-01 / DEF-09 / SPA Nav)', () => {
     finReimb.unmount()
   })
 })
+
+it('routes an authorized admin to the warehouse approval settings editor', async () => {
+  renderRouter('/inventory/settings', ['super_admin'], ['inventory.read', 'inventory.manage_settings'])
+  expect(await screen.findByRole('heading', { name: 'Warehouse approval settings' })).toBeInTheDocument()
+})
+
+it('routes a linked employee to My Equipment without inventory management permissions', async () => {
+  renderRouter('/my/assets', ['employee'], ['equipment_requests.read_self'])
+  expect(await screen.findByRole('heading', { name: 'My Equipment' })).toBeInTheDocument()
+})
+
+it('routes a warehouse reviewer to employee equipment requests', async () => {
+  renderRouter('/inventory/employee-requests', ['warehouse_manager'], ['inventory.issue'])
+  expect(await screen.findByRole('heading', { name: 'Employee equipment requests' })).toBeInTheDocument()
+})

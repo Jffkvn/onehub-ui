@@ -48,6 +48,8 @@ const WarehouseRequestDetailPage = lazy(() =>
 const InventoryCatalogPage = lazy(() =>
   import('@/modules/warehouse/catalog/InventoryCatalogPage').then((m) => ({ default: m.InventoryCatalogPage })),
 )
+const EmployeeEquipmentPage = lazy(() => import('@/modules/warehouse/employee-equipment/EmployeeEquipmentPage'))
+const WarehouseSettingsPage = lazy(() => import('@/modules/warehouse/settings/WarehouseSettingsPage'))
 const ReceivingPage = lazy(() =>
   import('@/modules/warehouse/stock/ReceivingPage').then((m) => ({ default: m.ReceivingPage })),
 )
@@ -236,6 +238,9 @@ function ProtectedShellLayout() {
           <Route element={<RequirePermission permission="insurance.read_self" disallowMonitorOnly />}>
             <Route path="/my/insurance" element={<InsurancePage />} />
           </Route>
+          <Route element={<RequirePermission permission="equipment_requests.read_self" disallowMonitorOnly />}>
+            <Route path="/my/assets" element={<EmployeeEquipmentPage />} />
+          </Route>
           <Route element={<RequirePermission permission="reimbursements.read_self" disallowMonitorOnly />}>
             <Route path="/my/reimbursements" element={<ReimbursementsPage />} />
           </Route>
@@ -384,6 +389,13 @@ function ProtectedShellLayout() {
           </Route>
           <Route element={<RequirePermission permission="inventory.adjust" />}>
             <Route path="/inventory/adjustments" element={<StockAdjustmentPage />} />
+          </Route>
+
+          <Route element={<RequirePermission anyOf={['inventory.issue', 'inventory.approve']} />}>
+            <Route path="/inventory/employee-requests" element={<EmployeeEquipmentPage manage />} />
+          </Route>
+          <Route element={<RequirePermission permission="inventory.manage_settings" />}>
+            <Route path="/inventory/settings" element={<WarehouseSettingsPage />} />
           </Route>
 
           {/* Custody */}
