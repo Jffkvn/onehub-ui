@@ -36,6 +36,8 @@ function UserAccessEditor({ action, scope, onClose, onSaved }: {
   const targetStatus = target?.status === 'active' ? 'deactivated' : 'active'
   const title = action.kind === 'connect' ? 'Connect an Auth account'
     : action.kind === 'edit' ? 'Edit access' : targetStatus === 'active' ? 'Reactivate account' : 'Deactivate account'
+  const currentLink = target?.employee?.id ?? ''
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(currentLink)
   const [dirty, setDirty] = useState(false)
   const directoryOptions = useQuery({
     queryKey: ['system-access', scope.identityKey, scope.authEpoch, 'editor-options'],
@@ -52,7 +54,7 @@ function UserAccessEditor({ action, scope, onClose, onSaved }: {
       const fields = {
         displayName: formText(body, 'displayName'),
         roleKeys: body.getAll('roles').filter((value) => typeof value === 'string') as RoleKey[],
-        employeeId: formText(body, 'employeeId') || null,
+        employeeId: selectedEmployeeId || null,
         reason,
       }
       return action.kind === 'connect'
@@ -72,7 +74,6 @@ function UserAccessEditor({ action, scope, onClose, onSaved }: {
   const employees = directoryOptions.data?.employees.filter((employee) =>
     employee.available || employee.linkedProfileId === target?.profileId,
   ) ?? []
-  const currentLink = target?.employee?.id ?? ''
   return (
     <Dialog open title={title} description={action.kind === 'connect'
       ? 'Use the exact email of an existing Supabase Auth user or invitation.'
@@ -93,7 +94,12 @@ function UserAccessEditor({ action, scope, onClose, onSaved }: {
             <>
               <label className={field}>Display name<Input required name="displayName" maxLength={160} defaultValue={target?.displayName} /></label>
               <label className={field}>Employee link
-                <select name="employeeId" className={select} defaultValue={currentLink}>
+                <select
+                  name="employeeId"
+                  className={select}
+                  value={selectedEmployeeId}
+                  onChange={(event) => setSelectedEmployeeId(event.currentTarget.value)}
+                >
                   <option value="">Unlinked account</option>
                   {currentLink && !employees.some(({ id }) => id === currentLink) && (
                     <option value={currentLink}>{target?.employee?.legalName} (current link)</option>
