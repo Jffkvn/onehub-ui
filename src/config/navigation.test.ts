@@ -43,6 +43,7 @@ const validPermissions = [
     'service_alerts.read',
     'service_alerts.ack',
     'service_alerts.resolve',
+    'router_float.read',
   ]),
 ]
 
@@ -220,5 +221,51 @@ describe('Navigation Config & Permissions Gating', () => {
     )
     const monitorPaths = monitorNav.flatMap((s) => s.items).map((i) => i.path)
     expect(monitorPaths).toEqual(['/services/monitor'])
+  })
+
+  it('gates Router Float Pass 1 routes across warehouse, service coordinator, service technicians, and tower roles', () => {
+    const whPaths = getPermittedNav(
+      ['inventory.read', 'inventory.receipt', 'inventory.issue', 'router_float.read'],
+      ['warehouse_manager'],
+    )
+      .flatMap((s) => s.items)
+      .map((i) => i.path)
+    expect(whPaths).toContain('/inventory/router-float')
+    expect(whPaths).not.toContain('/services/my-float')
+
+    const svcCoordPaths = getPermittedNav(
+      ['service_requests.read', 'router_float.read', 'service_visits.work_assigned'],
+      ['service_coordinator'],
+    )
+      .flatMap((s) => s.items)
+      .map((i) => i.path)
+    expect(svcCoordPaths).toContain('/inventory/router-float')
+    expect(svcCoordPaths).toContain('/services/my-float')
+
+    const techPaths = getPermittedNav(
+      ['service_visits.read_assigned', 'service_visits.work_assigned'],
+      ['service_technician'],
+    )
+      .flatMap((s) => s.items)
+      .map((i) => i.path)
+    expect(techPaths).toContain('/services/my-float')
+    expect(techPaths).not.toContain('/inventory/router-float')
+
+    const towerCoordPaths = getPermittedNav(
+      ['projects.read', 'daily_updates.create', 'inventory.read', 'inventory.request', 'cash_advances.request'],
+      ['coordinator'],
+    )
+      .flatMap((s) => s.items)
+      .map((i) => i.path)
+    expect(towerCoordPaths).not.toContain('/services/my-float')
+    expect(towerCoordPaths).not.toContain('/inventory/router-float')
+
+    const towerPmPaths = getPermittedNav(
+      ['projects.read', 'inventory.read', 'inventory.request', 'service_requests.read'],
+      ['project_manager'],
+    )
+      .flatMap((s) => s.items)
+      .map((i) => i.path)
+    expect(towerPmPaths).not.toContain('/inventory/router-float')
   })
 })

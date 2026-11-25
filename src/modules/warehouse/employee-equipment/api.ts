@@ -80,7 +80,7 @@ export function employeeEquipmentApi(scope: IdentityScopeRef) {
     async choices(search: string, signal: AbortSignal) {
       const check = pinSession(scope)
       const query = getSupabaseClient().from('equipment_assets')
-        .select('id,model_name,serial_number').eq('status', 'available').not('current_warehouse_id', 'is', null)
+        .select('id,model_name,serial_number').eq('asset_kind', 'general').eq('status', 'available').not('current_warehouse_id', 'is', null)
       if (search) query.ilike('serial_number', '%' + search.replace(/[\\%_]/g, '\\$&') + '%')
       const { data, error } = await query.order('model_name').order('id').limit(40).abortSignal(signal)
       check()

@@ -65,6 +65,12 @@ const StockAdjustmentPage = lazy(() =>
 const CustodyPage = lazy(() =>
   import('@/modules/warehouse/custody/CustodyPage').then((m) => ({ default: m.CustodyPage })),
 )
+const RouterFloatPage = lazy(() =>
+  import('@/modules/warehouse/router-float/RouterFloatPage').then((m) => ({ default: m.RouterFloatPage })),
+)
+const MyRouterFloatPage = lazy(() =>
+  import('@/modules/warehouse/router-float/MyRouterFloatPage').then((m) => ({ default: m.MyRouterFloatPage })),
+)
 
 const LoginPage = lazy(() =>
   import('@/modules/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
@@ -367,6 +373,9 @@ function ProtectedShellLayout() {
           <Route element={<RequirePermission permission="service_visits.read_assigned" disallowMonitorOnly />}>
             <Route path="/services/my-jobs" element={<MyServiceJobsPage />} />
           </Route>
+          <Route element={<RequirePermission permission="service_visits.work_assigned" disallowMonitorOnly />}>
+            <Route path="/services/my-float" element={<MyRouterFloatPage />} />
+          </Route>
           <Route element={<RequirePermission permission="service_requests.monitor" />}>
             <Route path="/services/monitor" element={<ServiceMonitorPage />} />
           </Route>
@@ -386,6 +395,16 @@ function ProtectedShellLayout() {
           </Route>
           <Route element={<RequirePermission permission="inventory.receipt" />}>
             <Route path="/inventory/receiving" element={<ReceivingPage />} />
+          </Route>
+          <Route
+            element={
+              <RequirePermission
+                anyOf={['router_float.read', 'inventory.issue', 'inventory.receipt']}
+                disallowMonitorOnly
+              />
+            }
+          >
+            <Route path="/inventory/router-float" element={<RouterFloatPage />} />
           </Route>
           <Route element={<RequirePermission anyOf={['inventory.receipt', 'inventory.adjust']} />}>
             <Route path="/inventory/bulk" element={<BulkStockPage />} />

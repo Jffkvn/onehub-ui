@@ -70,6 +70,7 @@ import {
   UrgentFlagDialog,
 } from '../components/ServiceModals'
 import { UrgentDeliveryStatusPanel } from '../components/UrgentDeliveryStatusPanel'
+import { ServiceRequestRoutersPanel } from '@/modules/warehouse/router-float/ServiceRequestRoutersPanel'
 
 function resolveSafeBackPath(rawFrom: string | null, canReadAll: boolean): { path: string; label: string } {
   if (rawFrom && rawFrom.startsWith('/services') && !rawFrom.startsWith('//')) {
@@ -1240,6 +1241,15 @@ export function ServiceRequestDetailPage() {
           actorId={actorId}
         />
       )}
+
+      <ServiceRequestRoutersPanel
+        serviceRequestId={detail.id}
+        status={detail.status}
+        openVisitId={openVisit?.id ?? null}
+        isActiveCrewMember={
+          canWork && detail.viewer_scope !== 'historical_participant' && detail.my_assignment_role !== null
+        }
+      />
 
       {/* Urgent Flags Section */}
       {detail.urgent_flags.length > 0 && (

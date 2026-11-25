@@ -77,8 +77,10 @@ it('hands warehouse staff off to the existing stock request for approval and iss
   rpc.mockImplementation((name: string) => name === 'rpc_list_employee_equipment'
     ? { abortSignal: () => Promise.resolve({ error: null, data: { linked: false, requests: [request], issued: [], total: 1 } }) }
     : Promise.resolve({ error: null, data: stockId }))
+  const eqCalls: unknown[][] = []
   from.mockImplementation(() => {
-    const find = { select: () => find, eq: () => find, not: () => find, order: () => find, limit: () => find,
+    const find = { select: () => find, eq: (col: string, val: unknown) => { eqCalls.push([col, val]); return find },
+      not: () => find, order: () => find, limit: () => find,
       abortSignal: () => Promise.resolve({ error: null, data: [{ id: toolId, model_name: 'QA Optical Meter', serial_number: 'QA-METER-001' }] }) }
     return find
   })
@@ -87,6 +89,7 @@ it('hands warehouse staff off to the existing stock request for approval and iss
   fireEvent.click(await screen.findByRole('button', { name: 'Prepare stock request' }))
   const form = within(screen.getByRole('dialog'))
   await form.findByRole('option', { name: 'QA-METER-001 · QA Optical Meter' })
+  expect(eqCalls).toContainEqual(['asset_kind', 'general'])
   fireEvent.change(form.getByLabelText('Available equipment'), { target: { value: toolId } })
   fireEvent.change(form.getByLabelText('Expected return date'), { target: { value: '2099-01-01' } })
   fireEvent.click(form.getByRole('button', { name: 'Prepare stock request' }))

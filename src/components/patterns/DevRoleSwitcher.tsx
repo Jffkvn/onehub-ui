@@ -71,6 +71,7 @@ export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'reports.view',
     'roles.manage',
     'roles.read',
+    'router_float.read',
     'service_alerts.ack',
     'service_alerts.read',
     'service_alerts.resolve',
@@ -144,6 +145,7 @@ export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'inventory.issue',
     'inventory.manage_settings',
     'projects.read_operational',
+    'router_float.read',
   ],
 
   cfo: [
@@ -171,6 +173,7 @@ export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'inventory.approve',
     'reports.view',
     'reports.export',
+    'router_float.read',
   ],
 
   managing_director: [
@@ -191,6 +194,7 @@ export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'reports.view',
     'reports.export',
     'audit.read',
+    'router_float.read',
   ],
 
   project_manager: [
@@ -272,6 +276,7 @@ export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'service_alerts.read',
     'service_alerts.ack',
     'service_alerts.resolve',
+    'router_float.read',
   ],
 
   service_coordinator: [
@@ -298,6 +303,7 @@ export const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'service_alerts.read',
     'service_alerts.ack',
     'service_alerts.resolve',
+    'router_float.read',
   ],
 
   service_technician: [

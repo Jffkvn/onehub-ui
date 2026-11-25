@@ -28,7 +28,9 @@ export type Equipment = {
   id: string
   model_name: string
   serial_number: string
-  status: 'available' | 'assigned' | 'maintenance' | 'damaged' | 'lost'
+  mac_address?: string | null
+  asset_kind?: 'general' | 'cpe_router'
+  status: 'available' | 'assigned' | 'maintenance' | 'damaged' | 'lost' | 'installed'
   is_sensitive: boolean
   item_categories: { name: string } | null
   warehouses: { name: string } | null
@@ -144,8 +146,11 @@ export async function readConsumables(page: number, search: string, scope: Ident
 export async function readEquipment(page: number, search: string, scope: IdentityScopeRef, signal: AbortSignal): Promise<CatalogPage<Equipment>> {
   const assertCurrent = protect(scope, signal)
   const query = getSupabaseClient().from('equipment_assets')
-    .select('id,model_name,serial_number,status,is_sensitive,item_categories(name),warehouses(name)', { count: 'exact' })
-  if (search) query.ilike('serial_number', searchPattern(search))
+    .select('id,model_name,serial_number,mac_address,asset_kind,status,is_sensitive,item_categories(name),warehouses(name)', { count: 'exact' })
+  if (search) {
+    const pattern = searchPattern(search)
+    query.or(`serial_number.ilike.${pattern},mac_address.ilike.${pattern}`)
+  }
   const first = page * catalogPageSize
   const result = await query.order('model_name').order('id').range(first, first + catalogPageSize - 1).abortSignal(signal)
   assertCurrent()

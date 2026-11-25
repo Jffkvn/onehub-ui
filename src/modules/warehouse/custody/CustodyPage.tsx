@@ -32,7 +32,14 @@ function matchesSearch(custody: ActiveCustody, search: string) {
 
   const equipment = related(custody.equipment)
   const custodian = related(custody.custodian)
-  return [custody.equipment_asset_id, equipment?.model_name, equipment?.serial_number, custody.project_name, custodian?.display_name]
+  return [
+    custody.equipment_asset_id,
+    equipment?.model_name,
+    equipment?.serial_number,
+    equipment?.mac_address,
+    custody.project_name,
+    custodian?.display_name,
+  ]
     .some((value) => value?.toLowerCase().includes(search))
 }
 
@@ -90,7 +97,7 @@ function ReturnDialog({
     <Dialog
       open
       title="Record equipment return"
-      description={`${assetName(custody)} · ${related(custody.equipment)?.serial_number ?? custody.project_name}`}
+      description={`${assetName(custody)} · ${related(custody.equipment)?.serial_number ?? custody.project_name ?? 'Router float'}`}
       onOpenChange={(next) => { if (!next && !sending.current) onClose() }}
     >
       <form className="space-y-4" onSubmit={(event) => void submit(event)}>
@@ -227,19 +234,27 @@ function CustodyContent({ canReturn, mode, scope }: { canReturn: boolean; mode: 
               </div>
               <dl className="grid grid-cols-2 gap-3 text-xs text-soft">
                 <div><dt className="text-muted">Assigned to</dt><dd className="font-medium text-ink">{related(row.custodian)?.display_name ?? 'Name unavailable'}</dd></div>
-                <div><dt className="text-muted">Project</dt><dd className="break-words font-medium text-ink">{row.project_name}</dd></div>
+                <div><dt className="text-muted">{row.custody_origin === 'warehouse_handover' ? 'Workflow' : 'Project'}</dt><dd className="break-words font-medium text-ink">{row.project_name ?? 'Router float'}</dd></div>
                 <div><dt className="text-muted">Issued</dt><dd>{formatDateTimeInZone(row.issued_at, kampalaZone)}</dd></div>
                 <div><dt className="text-muted">Return by</dt><dd>{row.expected_return_date ? formatLocalDateLabel(row.expected_return_date) : '—'}</dd></div>
                 <div><dt className="text-muted">Issued from</dt><dd>{related(row.source_warehouse)?.name ?? 'Warehouse unavailable'}</dd></div>
                 <div><dt className="text-muted">Condition at issue</dt><dd className="break-words">{row.issue_condition}</dd></div>
               </dl>
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
-                <Link to={`/inventory/requests/${row.stock_request_id}`}
-                  className="inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald hover:underline">
-                  <ClipboardList aria-hidden="true" className="h-4 w-4" />
-                  Open request
-                </Link>
-                {isReturns && canReturn && (
+                {row.stock_request_id ? (
+                  <Link to={`/inventory/requests/${row.stock_request_id}`}
+                    className="inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald hover:underline">
+                    <ClipboardList aria-hidden="true" className="h-4 w-4" />
+                    Open request
+                  </Link>
+                ) : (
+                  <Link to="/inventory/router-float"
+                    className="inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald hover:underline">
+                    <ClipboardList aria-hidden="true" className="h-4 w-4" />
+                    Open router float
+                  </Link>
+                )}
+                {isReturns && canReturn && (row.custody_origin ?? 'stock_request') === 'stock_request' && (
                   <Button type="button" size="sm" variant="outline"
                     aria-label={`Record return for ${assetName(row)}`}
                     leftIcon={<Undo2 aria-hidden="true" className="h-4 w-4" />}

@@ -10,13 +10,15 @@ type Related<T> = T | T[] | null
 export interface ActiveCustody {
   id: string
   equipment_asset_id: string
-  stock_request_id: string
-  project_name: string
+  stock_request_id: string | null
+  project_name: string | null
+  custody_origin?: 'stock_request' | 'warehouse_handover' | 'customer_collection'
+  float_state?: 'pending_handover' | 'with_technician' | 'faulty_to_return' | null
   issued_from_warehouse_id: string
   issue_condition: string
   issued_at: string
   expected_return_date: string | null
-  equipment: Related<{ model_name: string; serial_number: string }>
+  equipment: Related<{ model_name: string; serial_number: string; mac_address?: string | null }>
   custodian: Related<{ display_name: string }>
   source_warehouse: Related<{ name: string }>
 }
@@ -29,9 +31,9 @@ export interface ReturnWarehouse {
 export type ReturnCondition = 'good' | 'damaged' | 'lost'
 
 const custodyColumns = `
-  id, equipment_asset_id, stock_request_id, project_name, issued_from_warehouse_id,
+  id, equipment_asset_id, stock_request_id, project_name, custody_origin, float_state, issued_from_warehouse_id,
   issue_condition, issued_at, expected_return_date,
-  equipment:equipment_assets!equipment_asset_id(model_name,serial_number),
+  equipment:equipment_assets!equipment_asset_id(model_name,serial_number,mac_address),
   custodian:profiles!custodian_profile_id(display_name),
   source_warehouse:warehouses!issued_from_warehouse_id(name)
 `

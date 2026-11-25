@@ -40,6 +40,7 @@ const titles: Record<CatalogView, { title: string; subtitle: string }> = {
 const equipmentStatus: Record<Equipment['status'], { label: string; tone: StatusPillProps['tone'] }> = {
   available: { label: 'Available', tone: 'success' },
   assigned: { label: 'Assigned', tone: 'info' },
+  installed: { label: 'Installed', tone: 'neutral' },
   maintenance: { label: 'Maintenance', tone: 'warning' },
   damaged: { label: 'Damaged', tone: 'danger' },
   lost: { label: 'Lost', tone: 'danger' },
@@ -313,7 +314,14 @@ function EquipmentView({ scope }: { scope: IdentityScopeRef }) {
   const [labelFor, setLabelFor] = useState<Equipment | null>(null)
   const query = useCatalogQuery(scope, ['equipment', page, search], (signal) => readEquipment(page, search, scope, signal))
   const columns: ColumnDef<Equipment>[] = [
-    { key: 'asset', header: 'Asset', accessor: (row) => namedEntry(row.model_name, row.serial_number) },
+    {
+      key: 'asset',
+      header: 'Asset',
+      accessor: (row) => namedEntry(
+        row.model_name,
+        row.mac_address ? `${row.serial_number} · MAC ${row.mac_address}` : row.serial_number,
+      ),
+    },
     { key: 'category', header: 'Category', accessor: (row) => row.item_categories?.name ?? '—' },
     { key: 'warehouse', header: 'Warehouse', accessor: (row) => row.warehouses?.name ?? '—' },
     {
@@ -339,7 +347,7 @@ function EquipmentView({ scope }: { scope: IdentityScopeRef }) {
   ]
   return (
     <>
-      <CatalogSearch label="Search by serial number" placeholder="Search by serial number" onApply={(value) => setFilters({ page: 0, search: value })} />
+      <CatalogSearch label="Search by serial or MAC" placeholder="Search by serial or MAC" onApply={(value) => setFilters({ page: 0, search: value })} />
       <CatalogTable
         query={query}
         columns={columns}

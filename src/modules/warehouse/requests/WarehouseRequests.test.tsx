@@ -92,7 +92,14 @@ describe('warehouse requests', () => {
         ],
       }
       const response = Promise.resolve({ data: records[table], error: null })
-      const builder = { select: () => builder, eq: () => builder, in: () => builder, is: () => builder,
+      ;(from as unknown as { eqCalls?: unknown[][] }).eqCalls ??= []
+      const eq = vi.fn((col: string, val: unknown) => {
+        if (table === 'equipment_assets') {
+          ;(from as unknown as { eqCalls: unknown[][] }).eqCalls.push([col, val])
+        }
+        return builder
+      })
+      const builder = { select: () => builder, eq, in: () => builder, is: () => builder,
         order: () => builder, then: response.then.bind(response) }
       return builder
     })
@@ -114,6 +121,7 @@ describe('warehouse requests', () => {
       p_project_id: fixtures.project,
       p_items: [{ consumable_item_id: null, equipment_asset_id: fixtures.asset, quantity: 1, expected_return_date: '2027-01-01' }],
     }))
+    expect((from as unknown as { eqCalls?: unknown[][] }).eqCalls).toContainEqual(['asset_kind', 'general'])
   })
 
   it('keeps escalated approval with the finance permission', async () => {

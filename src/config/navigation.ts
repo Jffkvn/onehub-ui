@@ -36,6 +36,7 @@ import {
   Megaphone,
   ShieldCheck,
   Wallet,
+  Router,
 } from 'lucide-react'
 
 export type NavSection =
@@ -365,6 +366,15 @@ export const NAV_ITEMS: NavItem[] = [
     disallowMonitorOnly: true,
   },
   {
+    key: 'my-router-float',
+    label: 'My Router Float',
+    path: '/services/my-float',
+    icon: Router,
+    section: 'Service Ops',
+    permission: 'service_visits.work_assigned',
+    disallowMonitorOnly: true,
+  },
+  {
     key: 'service-monitor',
     label: 'Operations Monitor',
     path: '/services/monitor',
@@ -406,6 +416,15 @@ export const NAV_ITEMS: NavItem[] = [
     icon: ArrowDownToLine,
     section: 'Inventory',
     permission: 'inventory.receipt',
+  },
+  {
+    key: 'router-float',
+    label: 'Router Float',
+    path: '/inventory/router-float',
+    icon: Router,
+    section: 'Inventory',
+    anyOf: ['router_float.read', 'inventory.issue', 'inventory.receipt'],
+    disallowMonitorOnly: true,
   },
   {
     key: 'ledger',

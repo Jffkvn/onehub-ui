@@ -126,3 +126,42 @@ it('does not submit when the signed-in account changes during the return check',
   await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm return' })).toBeEnabled())
   expect(rpc).not.toHaveBeenCalled()
 })
+
+it('routes router float returns exclusively through Router Float instead of generic custody return', async () => {
+  from.mockImplementation((table: string) => {
+    const query = {
+      select: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      range: vi.fn().mockReturnThis(),
+      maybeSingle: lookup,
+      abortSignal: () => Promise.resolve({
+        data: table === 'warehouses'
+          ? [{ id: 'warehouse-main', name: 'Main store' }]
+          : [{
+              id: 'custody-float-faulty',
+              equipment_asset_id: '91290000-0000-4000-8000-000000000088',
+              stock_request_id: null,
+              project_name: null,
+              custody_origin: 'warehouse_handover',
+              float_state: 'faulty_to_return',
+              issued_from_warehouse_id: 'warehouse-main',
+              issue_condition: 'Sealed box',
+              issued_at: '2025-01-10T11:00:00Z',
+              expected_return_date: null,
+              equipment: { serial_number: 'HW-FAULTY-01', model_name: 'Huawei HG8245H5', mac_address: 'AA:BB:CC:DD:EE:01' },
+              custodian: { display_name: 'Kato Brian' },
+              source_warehouse: { name: 'Main store' },
+            }],
+        error: null,
+      }),
+    }
+    return query
+  })
+
+  mount('returns')
+  expect(await screen.findByText('Huawei HG8245H5')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Open router float' })).toHaveAttribute('href', '/inventory/router-float')
+  expect(screen.queryByRole('button', { name: /Record return for Huawei HG8245H5/i })).not.toBeInTheDocument()
+})

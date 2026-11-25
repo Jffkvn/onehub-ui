@@ -37,6 +37,7 @@ function tableRequest(resolve: () => unknown) {
     eq: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
     ilike: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
     gt: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     range: vi.fn().mockReturnThis(),

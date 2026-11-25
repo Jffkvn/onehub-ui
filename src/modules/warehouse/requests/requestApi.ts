@@ -90,7 +90,7 @@ export function stockRequestsApi(scope: IdentityScopeRef) {
         call<BackendResponse>((client) => client.from('projects').select('id,name').in('status', ['planned', 'active', 'on_hold']).order('name')),
         call<BackendResponse>((client) => client.from('consumable_items').select('id,name,sku').order('name')),
         call<BackendResponse>((client) => client.from('equipment_assets').select('id,model_name,serial_number,is_sensitive')
-          .eq('status', 'available').order('model_name')),
+          .eq('asset_kind', 'general').eq('status', 'available').order('model_name')),
         assignedProjectsOnly
           ? call<BackendResponse>((client) => client.from('project_assignments').select('project_id')
             .eq('user_id', scope.identityKey ?? '').is('unassigned_at', null))
