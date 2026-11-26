@@ -16,8 +16,8 @@ import { readInventoryOverview } from '@/modules/warehouse/catalog/catalogApi'
 import { systemSessionGuard } from './systemSession'
 
 const shortcuts = [
-  'service-my-jobs', 'service-intake', 'service-dispatch', 'service-monitor',
-  'projects', 'cash', 'requests', 'employee-equipment', 'returns',
+  'service-my-jobs', 'my-router-float', 'service-intake', 'service-dispatch', 'service-monitor',
+  'projects', 'cash', 'router-float', 'requests', 'employee-equipment', 'returns',
   'employees', 'reports', 'users', 'settings', 'audit',
   'my-attendance', 'my', 'my-leave', 'my-equipment',
 ]

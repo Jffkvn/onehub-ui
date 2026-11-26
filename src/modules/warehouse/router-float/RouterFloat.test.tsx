@@ -293,12 +293,13 @@ describe('RouterFloatPage warehouse workflow', () => {
       }),
     )
 
-    // Confirm faulty return via dialog — faulty_to_return locks strictly to Damaged / RMA and requires warehouse inspection note
+    // Confirm faulty return via dialog — faulty_to_return locks to the quarantine condition and requires warehouse inspection note
     fireEvent.click(screen.getByRole('button', { name: 'Confirm return' }))
     const dialog = await screen.findByRole('dialog', { name: 'Confirm router return' })
     expect(within(dialog).getByText('No PON link')).toBeInTheDocument()
     const conditionSelect = within(dialog).getByLabelText(/^Return condition/i)
     expect(conditionSelect).toHaveValue('damaged')
+    expect(within(dialog).getByRole('option', { name: 'Faulty or damaged (quarantine)' })).toBeInTheDocument()
     expect(conditionSelect).toBeDisabled()
     expect(within(dialog).queryByRole('option', { name: /Good/i })).not.toBeInTheDocument()
 
@@ -372,7 +373,7 @@ describe('RouterFloatPage warehouse workflow', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Receive Router Delivery/i }))
 
     fireEvent.change(screen.getByRole('textbox', { name: /^Supplier/i }), { target: { value: 'Huawei UG' } })
-    fireEvent.change(screen.getByRole('textbox', { name: /^GRN reference/i }), { target: { value: 'GRN-NEW-CONFLICT' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /^Delivery note \/ GRN number/i }), { target: { value: 'GRN-NEW-CONFLICT' } })
     fireEvent.change(screen.getByRole('textbox', { name: /^Invoice number/i }), { target: { value: 'INV-100' } })
 
     fireEvent.change(screen.getByLabelText(/Paste lines or scan directly/i), {
@@ -384,7 +385,7 @@ describe('RouterFloatPage warehouse workflow', () => {
     expect(screen.getByRole('button', { name: /Receive 1 router\(s\)/i })).toBeDisabled()
 
     // Exact match with the saved delivery GRN clears the blocker and reopens the receipt cleanly
-    fireEvent.change(screen.getByRole('textbox', { name: /^GRN reference/i }), { target: { value: 'GRN-EXACT-REPLAY' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /^Delivery note \/ GRN number/i }), { target: { value: 'GRN-EXACT-REPLAY' } })
 
     const reopenBtn = await screen.findByRole('button', { name: /Reopen recorded delivery receipt/i })
     await waitFor(() => expect(reopenBtn).toBeEnabled())
@@ -480,6 +481,37 @@ describe('Technician MyRouterFloatPage & ServiceRequestRoutersPanel', () => {
     )
   })
 
+  it.each([
+    { models: [], heading: 'Installed CPE Routers' },
+    {
+      models: ['Huawei EchoLife HG8245H5', 'TP-Link Archer C6', 'Huawei EchoLife HG8245H5'],
+      heading: 'Installed CPE Routers (Huawei EchoLife HG8245H5, TP-Link Archer C6)',
+    },
+  ])('shows $heading', async ({ models, heading }) => {
+    mocks.rpc.mockImplementation((name: string) => name === 'rpc_list_service_request_routers'
+      ? rpcResult(models.map((model, index) => ({
+          custody_id: `99999999-9999-4999-8999-99999999999${index}`,
+          equipment_asset_id: `66666666-6666-4666-8666-66666666666${index}`,
+          model_name: model,
+          serial_number: `SN-${index}`,
+          mac_address: null,
+          installed_at: '2026-11-25T06:00:00Z',
+          installed_by_name: 'Kato Brian',
+          installed_service_visit_id: visitId,
+          installed_site_name: 'Ntinda Complex',
+          installed_area_label: 'Ntinda',
+        })))
+      : rpcResult({ cap: 5, pending_count: 0, confirmed_count: 0, faulty_count: 0, active_total: 0, remaining_slots: 5, items: [] }))
+
+    mountWithProviders(
+      <ServiceRequestRoutersPanel serviceRequestId={reqId} status="in_progress" openVisitId={visitId} isActiveCrewMember={models.length > 0} />,
+    )
+    if (models.length === 0) {
+      expect(await screen.findByText('No CPE router recorded on this job yet.')).toBeInTheDocument()
+    }
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
+  })
+
   it('displays installed routers on a service ticket and records a 1-tap install from confirmed float', async () => {
     mocks.rpc.mockImplementation((name: string) => {
       if (name === 'rpc_list_service_request_routers') {
@@ -535,7 +567,10 @@ describe('Technician MyRouterFloatPage & ServiceRequestRoutersPanel', () => {
       />,
     )
 
-    expect(await screen.findByText(/TP-INST-99/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', {
+      name: 'Installed CPE Routers (TP-Link Archer C6)',
+    })).toBeInTheDocument()
+    expect(screen.getByText(/TP-INST-99/)).toBeInTheDocument()
     const select = await screen.findByLabelText('Select router from my float')
     fireEvent.change(select, { target: { value: assetReady } })
     fireEvent.click(screen.getByRole('button', { name: 'Record Installed Router' }))

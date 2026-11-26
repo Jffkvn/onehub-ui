@@ -122,7 +122,7 @@ export function AttendanceSetupSection({ setup }: { setup: SetupOverviewResponse
                 Live Attendance Rollout Status
               </h2>
               <StatusPill tone={setup.policy.enabled ? 'success' : 'warning'} size="sm">
-                {setup.policy.enabled ? 'Live Enabled' : 'Disabled (Rollout Pending)'}
+                {setup.policy.enabled ? 'Live Enabled' : 'Live clock-in paused'}
               </StatusPill>
               <StatusPill tone={setup.ready_to_enable ? 'info' : 'neutral'} size="sm">
                 {setup.ready_to_enable ? 'Ready to Enable' : 'Setup Incomplete'}

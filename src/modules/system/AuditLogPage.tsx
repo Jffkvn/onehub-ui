@@ -27,13 +27,37 @@ const changesSchema = z.object({ previous_values: z.unknown(), new_values: z.unk
 type AuditRow = z.infer<typeof rowSchema>
 const section = 'rounded-xl border border-line bg-surface p-4'
 
+const activityLabels = new Map([
+  ['inventory.router_float_issued', 'Router issued to technician'],
+])
+
+function readableLabel(key: string) {
+  const words = key.replace(/[._]+/g, ' ').trim()
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+function activityLabel(eventType: string) {
+  return activityLabels.get(eventType) ?? readableLabel(eventType)
+}
+
+function escapeLike(value: string) {
+  return value.replace(/[\\%_]/g, '\\$&')
+}
+
+function activitySearchPattern(search: string) {
+  const words = search.split(/[.\s_]+/).filter(Boolean)
+  const phrase = words.join(' ').toLowerCase()
+  const match = [...activityLabels].find(([, label]) => label.toLowerCase() === phrase)
+  return match ? escapeLike(match[0]) : '%' + words.map(escapeLike).join('%') + '%'
+}
+
 async function loadAudit(scope: IdentityScopeRef, search: string, page: number, signal: AbortSignal) {
   const check = systemSessionGuard(scope)
   const start = page * pageSize
   const query = getSupabaseClient().from('audit_events')
     .select('id,occurred_at,event_type,entity_type,entity_id,reason,actor_profile_id,actor:profiles!audit_events_actor_profile_id_fkey(display_name)')
     .order('occurred_at', { ascending: false }).order('id', { ascending: false }).range(start, start + pageSize)
-  if (search) query.ilike('event_type', '%' + search.replace(/[\\%_]/g, '\\$&') + '%')
+  if (search) query.ilike('event_type', activitySearchPattern(search))
   const { data, error } = await query.abortSignal(signal)
   check()
   if (error) throw new Error('The audit log could not be loaded.')
@@ -55,11 +79,11 @@ function AuditDetail({ scope, entry, close }: { scope: IdentityScopeRef; entry: 
     enabled: scope.isAuthReady,
   })
   return (
-    <Dialog open title={entry.event_type.replaceAll('_', ' ')} description={formatDateTimeInZone(entry.occurred_at, 'Africa/Kampala')}
+    <Dialog open title={activityLabel(entry.event_type)} description={formatDateTimeInZone(entry.occurred_at, 'Africa/Kampala')}
       onOpenChange={(open) => { if (!open) close() }}>
       <div className="space-y-4">
         {entry.reason && <p className="whitespace-pre-wrap break-words text-sm text-soft">{entry.reason}</p>}
-        <p className="break-all text-sm text-soft">{entry.entity_type.replaceAll('_', ' ')}{entry.entity_id && ' · ' + entry.entity_id}</p>
+        <p className="break-all text-sm text-soft">{readableLabel(entry.entity_type)}{entry.entity_id && ' · ' + entry.entity_id}</p>
         {query.isPending && <p role="status" className="text-sm text-soft">Loading recorded changes…</p>}
         {query.isError && <div role="alert" className="space-y-2 text-sm">
           <p>{query.error.message}</p>
@@ -106,8 +130,8 @@ function AuditWorkspace({ scope }: { scope: IdentityScopeRef }) {
     <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader eyebrow="System" title="Audit Log" />
       <form onSubmit={searchEvents} className="flex flex-wrap items-end gap-2">
-        <label className="flex min-w-52 flex-1 flex-col gap-1.5 text-sm font-medium">Event type
-          <Input type="search" name="eventType" placeholder="Search event type" maxLength={100} />
+        <label className="flex min-w-52 flex-1 flex-col gap-1.5 text-sm font-medium">Search activity
+          <Input type="search" name="eventType" placeholder="e.g. router, payroll, role" maxLength={100} />
         </label>
         <Button type="submit" variant="outline">Search</Button>
       </form>
@@ -122,9 +146,9 @@ function AuditWorkspace({ scope }: { scope: IdentityScopeRef }) {
           {audit.data.rows.map((event) => (
             <article key={event.id} className={section + ' flex flex-wrap items-start justify-between gap-3'}>
               <div className="min-w-0 space-y-1">
-                <h2 className="break-words font-medium text-ink">{event.event_type}</h2>
-                <p className="text-sm text-soft">{event.actor?.display_name ?? (event.actor_profile_id ? 'Account ' + event.actor_profile_id.slice(0, 8) : 'System')} · {formatDateTimeInZone(event.occurred_at, 'Africa/Kampala')}</p>
-                <p className="break-all text-sm text-soft">{event.entity_type}{event.entity_id && ' · ' + event.entity_id}</p>
+                <h2 className="break-words font-medium text-ink">{activityLabel(event.event_type)}</h2>
+                <p className="text-sm text-soft">{event.actor?.display_name ?? (event.actor_profile_id ? 'Name unavailable' : 'System')} · {formatDateTimeInZone(event.occurred_at, 'Africa/Kampala')}</p>
+                <p className="break-all text-sm text-soft">{readableLabel(event.entity_type)}</p>
               </div>
               <Button size="sm" variant="outline" onClick={() => setSelected(event)}>View details</Button>
             </article>

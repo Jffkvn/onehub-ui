@@ -26,7 +26,7 @@ import { ServiceTimestamp } from './ServiceBadges'
 const SAFE_DEDUP_WINDOW_MS = 20 * 60 * 60 * 1000
 
 const ERROR_CODE_LABELS: Record<string, string> = {
-  EMAIL_CHANNEL_DISABLED: 'Global Email Channel Disabled (in-app alert active)',
+  EMAIL_CHANNEL_DISABLED: 'Email alerts paused',
   EMAIL_PROVIDER_NOT_CONFIGURED: 'Email Provider Secrets Not Configured (MAIL-01)',
   IDEMPOTENCY_WINDOW_EXPIRED_REQUIRES_RECONCILIATION:
     '20h Safe Deduplication Window Expired — Reconciliation Required',
@@ -278,7 +278,7 @@ export function AuditedReissueDialog({
             rows={3}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. Checked Resend dashboard after network timeout; delivery did not reach coordinator inbox."
+            placeholder="e.g. The coordinator confirmed they did not receive the alert after a delivery timeout."
           />
         </FormGroup>
 

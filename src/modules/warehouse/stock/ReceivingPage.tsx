@@ -29,7 +29,7 @@ const fieldClass = 'block min-w-0 space-y-1 text-sm font-medium text-ink'
 const amountFormat = new Intl.NumberFormat('en-UG', { style: 'currency', currency: 'UGX' })
 
 const receiptColumns: ColumnDef<StockReceipt>[] = [
-  { key: 'reference', header: 'GRN reference', accessor: (row) => row.reference_number },
+  { key: 'reference', header: 'Delivery note / GRN', accessor: (row) => row.reference_number },
   { key: 'received', header: 'Received', accessor: (row) => formatLocalDateLabel(row.received_date) },
   { key: 'supplier', header: 'Supplier', accessor: (row) => row.supplier_name ?? '—' },
   { key: 'invoice', header: 'Invoice', accessor: (row) => row.invoice_number ?? '—' },
@@ -194,7 +194,7 @@ function ReceivingContent({ scope, canRead }: { scope: IdentityScopeRef; canRead
               )}
               {mode === 'new' && <>
                 <ReceiptField label="Material name" name="materialName" minLength={2} maxLength={160} />
-                <ReceiptField label="SKU" name="sku" pattern="[A-Za-z0-9\-]+" maxLength={80} />
+                <ReceiptField label="Item code (SKU)" name="sku" pattern="[A-Za-z0-9\-]+" maxLength={80} />
                 <ReceiptField label="Unit of measure" name="unit" placeholder="e.g. metre" maxLength={60} />
                 <ReceiptField label="Reorder minimum" name="reorder" type="number" min={0} max={2147483647} step={1} defaultValue={0} />
               </>}
@@ -222,7 +222,7 @@ function ReceivingContent({ scope, canRead }: { scope: IdentityScopeRef; canRead
                 <ReceiptField label="New warehouse location" name="warehouseLocation" minLength={2} maxLength={160} />
               </>}
               <ReceiptField label="Supplier" name="supplier" minLength={2} maxLength={160} />
-              <ReceiptField label="GRN reference" name="grn" minLength={2} maxLength={120} />
+              <ReceiptField label="Delivery note / GRN" name="grn" minLength={2} maxLength={120} />
               <ReceiptField label="Invoice number" name="invoice" minLength={2} maxLength={120} />
               <ReceiptField label="Received date" name="receivedDate" type="date" max={today} defaultValue={today} />
               {mode !== 'equipment' && <ReceiptField label="Quantity" name="quantity" type="number" min={1} max={2147483647} step={1} defaultValue={1} />}

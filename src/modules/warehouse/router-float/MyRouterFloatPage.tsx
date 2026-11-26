@@ -65,7 +65,7 @@ function FaultyDialog({
             required
             disabled={isPending}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="e.g. No power / red LOS LED on bench test"
+            placeholder="e.g. Won’t power on, or the signal light is red"
           />
         </FormGroup>
         <FieldError error={error} />
@@ -134,7 +134,7 @@ export function MyRouterFloatPage() {
       <PageHeader
         eyebrow="Service Ops"
         title="My Router Float"
-        subtitle="Confirm warehouse counter pickups, manage your 5-router installation float, or flag DOA units."
+        subtitle="Confirm warehouse pickups, manage your 5-router float, or report a faulty CPE router."
         actions={
           <Link to="/services/my-jobs">
             <Button type="button" variant="outline" size="sm" leftIcon={<Wrench className="h-4 w-4" />}>

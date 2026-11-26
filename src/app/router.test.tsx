@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -591,6 +591,20 @@ describe('Batch 7F workspace routes', () => {
     renderRouter('/system/users', ['employee'], ['roles.read'])
     expect(await screen.findByRole('heading', { name: /Permission Denied/i })).toBeInTheDocument()
   })
+
+  it.each([
+    { roles: ['warehouse_manager'], grants: ['inventory.issue'], visible: ['Router Float'], hidden: ['My Router Float'] },
+    { roles: ['service_technician'], grants: ['service_visits.work_assigned'], visible: ['My Router Float'], hidden: ['Router Float'] },
+    { roles: ['coordinator'], grants: [], visible: [], hidden: ['Router Float', 'My Router Float'] },
+  ] satisfies { roles: UserRole[]; grants: string[]; visible: string[]; hidden: string[] }[])(
+    'shows only permitted Router Float quick actions for $roles',
+    async ({ roles, grants, visible, hidden }) => {
+      renderRouter('/dashboard', roles, grants)
+      const actions = within(await screen.findByRole('region', { name: 'Quick actions' }))
+      for (const name of visible) expect(actions.getByRole('link', { name })).toBeInTheDocument()
+      for (const name of hidden) expect(actions.queryByRole('link', { name })).not.toBeInTheDocument()
+    },
+  )
 
   it('gives the service technician a My Service Jobs link and no construction dashboard link', async () => {
     renderRouter('/dashboard', ['service_technician'], ['service_visits.read_assigned', 'service_visits.work_assigned'])

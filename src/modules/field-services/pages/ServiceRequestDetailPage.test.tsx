@@ -698,7 +698,7 @@ describe('ServiceRequestDetailPage', () => {
     const coordView = renderWithUrl(`/services/requests/${BASE_ID}?urgent=${FLAG_ID}`)
     expect(screen.getByText('Linked Alert')).toBeInTheDocument()
     expect(screen.getByText(/Acknowledged by Coordinator One/i)).toBeInTheDocument()
-    expect(screen.getAllByText(/Global Email Channel Disabled/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Email alerts paused/i).length).toBeGreaterThan(0)
 
     fireEvent.click(screen.getByRole('button', { name: /Retry Email Delivery/i }))
     await waitFor(() => {

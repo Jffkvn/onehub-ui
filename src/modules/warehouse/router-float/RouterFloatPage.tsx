@@ -92,7 +92,7 @@ function RouterReturnDialog({
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['warehouse'] })
-      onCompleted(`Confirmed return for ${item.serial_number} (${effectiveCondition === 'damaged' ? 'Damaged / RMA' : 'Good'}).`)
+      onCompleted(`Confirmed return for ${item.serial_number} (${effectiveCondition === 'damaged' ? 'Faulty or damaged (quarantine)' : 'Good'}).`)
     },
     onError: (err) => {
       if (!isAbortError(err)) setError(extractErrorMessage(err))
@@ -130,7 +130,7 @@ function RouterReturnDialog({
           label="Return condition"
           htmlFor="router-return-condition"
           required
-          hint={isReportedFaulty ? 'Reported faulty routers must be checked into Damaged / RMA intake.' : undefined}
+          hint={isReportedFaulty ? 'Reported faulty CPE routers must go into quarantine.' : undefined}
         >
           <select
             id="router-return-condition"
@@ -139,7 +139,7 @@ function RouterReturnDialog({
             disabled={mutation.isPending || isReportedFaulty}
             onChange={(e) => setCondition(e.target.value as 'damaged' | 'good')}
           >
-            <option value="damaged">Damaged / RMA (faulty unit)</option>
+            <option value="damaged">Faulty or damaged (quarantine)</option>
             {!isReportedFaulty && (
               <option value="good">Good (back to available depot stock)</option>
             )}
@@ -166,7 +166,7 @@ function RouterReturnDialog({
           label="Warehouse inspection notes"
           htmlFor="router-return-notes"
           required={requiresInspectionNote}
-          hint={requiresInspectionNote ? 'Record physical depot findings before RMA intake (min 3 characters).' : undefined}
+          hint={requiresInspectionNote ? 'Describe what you found during inspection. Enter at least 3 characters.' : undefined}
         >
           <Textarea
             id="router-return-notes"
@@ -177,7 +177,7 @@ function RouterReturnDialog({
               setNotes(e.target.value)
               setError(undefined)
             }}
-            placeholder="Describe depot check or RMA fault findings"
+            placeholder="e.g. The router did not power on during testing"
           />
         </FormGroup>
 
@@ -864,7 +864,7 @@ function ReceiveRouterDeliveryPanel({
             />
           </FormGroup>
 
-          <FormGroup label="GRN reference" htmlFor="cpe-grn" required>
+          <FormGroup label="Delivery note / GRN number" htmlFor="cpe-grn" required>
             <Input
               id="cpe-grn"
               value={grn}
@@ -996,7 +996,7 @@ function ReceiveRouterDeliveryPanel({
 
           {!isCheckingCatalog && hasGrnConflict && (
             <FieldError>
-              GRN reference &quot;{grn}&quot; already exists in this warehouse with different items or header values.
+              Delivery note / GRN number &quot;{grn}&quot; already exists in this warehouse with different items or header values.
             </FieldError>
           )}
 

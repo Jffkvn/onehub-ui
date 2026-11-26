@@ -344,7 +344,7 @@ export function ServiceDispatchPage() {
             variant={statusFilter === 'submitted' ? 'primary' : 'outline'}
             onClick={() => updateParam('status', statusFilter === 'submitted' ? null : 'submitted')}
           >
-            Unclaimed / Submitted
+            Awaiting Assignment
           </Button>
           <Button
             type="button"

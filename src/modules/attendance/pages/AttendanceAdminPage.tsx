@@ -617,7 +617,7 @@ export function AttendanceAdminPage() {
       <PageHeader
         eyebrow="People Operations"
         title="Attendance & Field Operations"
-        subtitle="Monitor company attendance, resolve missed-punch corrections and field/remote schedules, and govern rollout controls."
+        subtitle="Review daily attendance, resolve missed clock-ins or clock-outs, and manage field and remote schedules."
       />
 
       <PendingAttendanceOperationsBanner filterScope="admin" />

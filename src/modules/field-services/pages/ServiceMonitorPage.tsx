@@ -51,7 +51,7 @@ const BUCKET_META: Record<
   review: { label: 'Awaiting Review', description: 'Field work finished; coordinator verification pending' },
   urgent: { label: 'Open Urgent Alerts', description: 'Tickets with unacknowledged safety/service alerts' },
   overdue: { label: 'Overdue SLA', description: 'Past provider target deadline and still open' },
-  acknowledged: { label: 'Ack Urgent Alerts', description: 'Urgent alerts acknowledged and under active watch' },
+  acknowledged: { label: 'Acknowledged Urgent Alerts', description: 'Urgent alerts acknowledged and under active watch' },
 }
 
 function formatMonitorClock(ms: number): string {
@@ -222,7 +222,7 @@ export function ServiceMonitorPage() {
     accent: string
   }> = [
     { key: 'urgent', label: 'Open Urgent Flags', value: snapshot?.open_urgent_flags_count ?? null, accent: 'text-rose' },
-    { key: 'acknowledged', label: 'Ack Urgent Flags', value: snapshot?.acknowledged_urgent_flags_count ?? null, accent: 'text-amber' },
+    { key: 'acknowledged', label: 'Acknowledged Urgent Alerts', value: snapshot?.acknowledged_urgent_flags_count ?? null, accent: 'text-amber' },
     { key: 'unassigned', label: 'Unassigned', value: snapshot?.unassigned_count ?? null, accent: 'text-ink' },
     { key: 'ongoing', label: 'Assigned / In Progress', value: ongoingCount, accent: 'text-emerald-600' },
     { key: 'follow_up', label: 'Follow-Up Required', value: snapshot?.follow_up_count ?? null, accent: 'text-amber' },

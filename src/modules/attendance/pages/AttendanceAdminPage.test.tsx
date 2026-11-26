@@ -326,7 +326,7 @@ describe('AttendanceAdminPage Role Scope & Privacy Boundaries', () => {
     const setupTab = await screen.findByRole('tab', { name: /Setup & Enrolment/i })
     fireEvent.mouseDown(setupTab)
     fireEvent.click(setupTab)
-    expect(await screen.findByText(/Disabled \(Rollout Pending\)/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Live clock-in paused/i)).toBeInTheDocument()
 
     const hrApprovalsTab = screen.getByRole('tab', { name: /Approvals/i })
     fireEvent.mouseDown(hrApprovalsTab)

@@ -42,7 +42,7 @@ async function fillReceipt() {
   await screen.findByRole('option', { name: 'HQ-01 · Main depot' })
   fill('Warehouse', warehouse.id)
   fill('Supplier', ' Test Supplier ')
-  fill('GRN reference', 'GRN-001')
+  fill('Delivery note / GRN', 'GRN-001')
   fill('Invoice number', 'INV-001')
   fill('Received date', '2025-11-18')
 }

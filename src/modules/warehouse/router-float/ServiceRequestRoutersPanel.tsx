@@ -75,20 +75,21 @@ export function ServiceRequestRoutersPanel({
   })
 
   const installedRouters = installedQuery.data ?? []
+  const installedModels = [...new Set(installedRouters.map((router) => router.model_name.trim()).filter(Boolean))]
   const confirmedFloat =
     myFloatQuery.data?.items.filter((item) => item.float_state === 'with_technician') ?? []
 
-  if (installedRouters.length === 0 && !canInstallNow) {
+  if (!installedQuery.isSuccess && !canInstallNow) {
     return null
   }
 
   return (
     <section className="rounded-lg border border-line bg-surface p-5 shadow-xs space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Router className="h-4 w-4 text-emerald-600" />
-          <h2 className="font-display text-sm font-bold uppercase tracking-wider text-muted">
-            Installed CPE Routers ({installedRouters.length})
+        <div className="flex min-w-0 items-center gap-2">
+          <Router aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-600" />
+          <h2 className="min-w-0 break-words font-display text-sm font-bold text-ink">
+            Installed CPE Routers{installedModels.length > 0 && ` (${installedModels.join(', ')})`}
           </h2>
         </div>
         {canInstallNow && myFloatQuery.data && (
@@ -98,8 +99,12 @@ export function ServiceRequestRoutersPanel({
         )}
       </div>
 
-      {installedRouters.length === 0 ? (
-        <p className="text-xs text-muted">No CPE router recorded as installed on this ticket yet.</p>
+      {installedQuery.isPending ? (
+        <p role="status" className="text-xs text-muted">Loading installed routers…</p>
+      ) : installedQuery.isError ? (
+        <FieldError>Could not load installed routers.</FieldError>
+      ) : installedRouters.length === 0 ? (
+        <p className="text-xs text-muted">No CPE router recorded on this job yet.</p>
       ) : (
         <ul className="divide-y divide-line rounded-md border border-line">
           {installedRouters.map((router) => (

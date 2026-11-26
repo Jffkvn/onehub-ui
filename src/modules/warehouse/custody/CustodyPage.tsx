@@ -15,6 +15,7 @@ import { useAuth } from '@/modules/auth/AuthProvider'
 import { EquipmentScanner } from '@/modules/warehouse/labels/EquipmentScanner'
 import { parseEquipmentLabel } from '@/modules/warehouse/labels/equipmentLabel'
 import { listActiveCustody, listReturnWarehouses, recordAssetReturn, related, type ActiveCustody, type ReturnCondition } from './api'
+import { routerName } from '../router-float/routerName'
 
 type CustodyMode = 'issued' | 'returns'
 type DueFilter = 'all' | 'due' | 'overdue'
@@ -22,7 +23,9 @@ const kampalaZone = 'Africa/Kampala'
 const selectClass = 'h-10 w-full rounded-md border border-line bg-surface px-3 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald disabled:opacity-50'
 
 function assetName(custody: ActiveCustody) {
-  return related(custody.equipment)?.model_name ?? 'Equipment asset'
+  const model = related(custody.equipment)?.model_name
+  if (custody.custody_origin === 'warehouse_handover') return model ? routerName(model) : 'Router'
+  return model ?? 'Equipment asset'
 }
 
 function matchesSearch(custody: ActiveCustody, search: string) {
@@ -186,7 +189,7 @@ function CustodyContent({ canReturn, mode, scope }: { canReturn: boolean; mode: 
                 setSearchInput(event.target.value)
                 if (!event.target.value) setSearch('')
               }}
-              placeholder="Name, serial number, project, or EQPT label"
+              placeholder="Name, serial number, project, or QR sticker"
               leftIcon={<Search aria-hidden="true" className="h-4 w-4" />}
             />
           </FormGroup>
@@ -228,7 +231,7 @@ function CustodyContent({ canReturn, mode, scope }: { canReturn: boolean; mode: 
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h2 className="break-words font-display text-base font-semibold text-ink">{assetName(row)}</h2>
-                  <p className="break-all text-xs text-muted">{related(row.equipment)?.serial_number ?? row.equipment_asset_id}</p>
+                  <p className="break-all text-xs text-muted">{related(row.equipment)?.serial_number?.trim() || 'No serial recorded'}</p>
                 </div>
                 <CustodyStatus date={row.expected_return_date} today={today} />
               </div>

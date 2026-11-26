@@ -161,7 +161,7 @@ it('routes router float returns exclusively through Router Float instead of gene
   })
 
   mount('returns')
-  expect(await screen.findByText('Huawei HG8245H5')).toBeInTheDocument()
+  expect(await screen.findByText('Huawei HG8245H5 Router')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Open router float' })).toHaveAttribute('href', '/inventory/router-float')
   expect(screen.queryByRole('button', { name: /Record return for Huawei HG8245H5/i })).not.toBeInTheDocument()
 })
