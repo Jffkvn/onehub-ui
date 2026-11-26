@@ -204,8 +204,8 @@ function ProjectSummary({ details }: { details: ProjectDetails }) {
       ['Expected end', details.expected_end_date && formatLocalDateLabel(details.expected_end_date)],
       ['Completed', details.actual_completion_date && formatLocalDateLabel(details.actual_completion_date)],
       ['Health', <StatusPill tone={healthOptions[details.health_status].tone}>{healthOptions[details.health_status].label}</StatusPill>],
-      ['Contract reference', details.contract_reference],
-      ['Budget reference', details.budget_reference],
+      ['Client contract or work order number', details.contract_reference],
+      ['Internal budget code', details.budget_reference],
       ['Estimated budget', details.estimated_budget_ugx === null ? null :
         <span className="whitespace-nowrap tabular-nums">{projectAmount.format(details.estimated_budget_ugx)}</span>],
     ]} />
@@ -259,12 +259,17 @@ function CashSummary({ scope, projectId }: { scope: IdentityScopeRef; projectId:
   ]} />
 }
 
-const historyLabels: Record<string, string> = {
-  'projects.created': 'Project created',
-  'projects.updated': 'Project details changed',
-  'projects.status_changed': 'Project status changed',
-  'projects.member_assigned': 'Team member assigned',
-  'projects.member_unassigned': 'Team member removed',
+const historyActions: Record<string, string> = {
+  'projects.created': 'created the project',
+  'projects.updated': 'updated the project details',
+  'projects.status_changed': 'changed the project status',
+  'projects.member_assigned': 'assigned a team member',
+  'projects.document_added': 'added a project document',
+  'projects.member_unassigned': 'removed a team member',
+  'daily_updates.created': 'added a daily update',
+  'daily_updates.revised': 'revised a daily update',
+  'daily_updates.submitted': 'submitted a daily update',
+  'daily_updates.reviewed': 'reviewed a daily update',
 }
 
 function ProjectHistory({ scope, projectId }: { scope: IdentityScopeRef; projectId: string }) {
@@ -279,8 +284,10 @@ function ProjectHistory({ scope, projectId }: { scope: IdentityScopeRef; project
     <h2 className="font-display text-lg font-semibold text-ink">Project history</h2>
     <ul className="divide-y divide-line">
       {query.data.map((event, index) => <li key={event.occurred_at + ':' + index} className="space-y-1 py-3">
-        <p className="text-sm font-semibold text-ink">{historyLabels[event.event_type] ?? event.event_type.replace(/[._]/g, ' ')}</p>
-        <p className="text-xs text-muted">{formatDateTimeInZone(event.occurred_at, 'Africa/Kampala')}{event.actor_name && ' · ' + event.actor_name}</p>
+        <p className="text-sm font-semibold text-ink">{historyActions[event.event_type]
+          ? (event.actor_name || 'A team member') + ' ' + historyActions[event.event_type]
+          : 'Project activity recorded'}</p>
+        <p className="text-xs text-muted">{formatDateTimeInZone(event.occurred_at, 'Africa/Kampala')}{!historyActions[event.event_type] && event.actor_name && ' · ' + event.actor_name}</p>
         {event.reason && <p className="whitespace-pre-wrap break-words text-sm text-soft">{event.reason}</p>}
       </li>)}
     </ul>

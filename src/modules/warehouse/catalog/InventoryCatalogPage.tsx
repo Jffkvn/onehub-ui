@@ -13,6 +13,7 @@ import { StatusPill, type StatusPillProps } from '@/components/ui/StatusPill'
 import { useProtectedIdentityScope, type IdentityScopeRef } from '@/lib/idempotency/pendingOperations'
 import { formatDateTimeInZone } from '@/modules/attendance/lib/zonedTime'
 import { useAuth } from '@/modules/auth/AuthProvider'
+import { routerName } from '@/modules/warehouse/router-float/routerName'
 import { equipmentLabelPayload, printEquipmentLabel } from '@/modules/warehouse/labels/equipmentLabel'
 import {
   catalogPageSize,
@@ -47,11 +48,11 @@ const equipmentStatus: Record<Equipment['status'], { label: string; tone: Status
 }
 
 const movementLabels: Record<StockMovement['movement_type'], string> = {
-  receipt: 'Receipt',
-  issue: 'Issue',
-  return: 'Return',
-  adjustment_add: 'Adjustment in',
-  adjustment_remove: 'Adjustment out',
+  receipt: 'Received',
+  issue: 'Issued',
+  return: 'Returned',
+  adjustment_add: 'Stock count increased',
+  adjustment_remove: 'Stock count decreased',
 }
 
 function namedEntry(label: string, code?: string) {
@@ -72,7 +73,9 @@ const movementColumns: ColumnDef<StockMovement>[] = [
   },
   {
     key: 'item', header: 'Item', accessor: (row) => namedEntry(
-      row.consumable_items?.name ?? row.equipment_assets?.model_name ?? 'Item unavailable',
+      row.equipment_assets?.asset_kind === 'cpe_router'
+        ? routerName(row.equipment_assets.model_name)
+        : row.consumable_items?.name ?? row.equipment_assets?.model_name ?? 'Item unavailable',
       row.consumable_items?.sku ?? row.equipment_assets?.serial_number,
     ),
   },
@@ -83,7 +86,6 @@ const movementColumns: ColumnDef<StockMovement>[] = [
     ),
   },
   { key: 'recordedBy', header: 'Recorded by', accessor: (row) => row.profiles_performed_by?.display_name ?? '—' },
-  { key: 'reference', header: 'Reference', accessor: (row) => <span className="break-all font-mono text-xs">{row.reference_id}</span> },
 ]
 
 const consumableColumns: ColumnDef<Consumable>[] = [
@@ -294,7 +296,7 @@ function EquipmentLabel({ equipment, scope, onClose }: { equipment: Equipment; s
     <Dialog
       open
       title="Equipment QR label"
-      description={equipment.model_name + ' · ' + equipment.serial_number}
+      description={(equipment.asset_kind === 'cpe_router' ? routerName(equipment.model_name) : equipment.model_name) + ' · ' + equipment.serial_number}
       onOpenChange={(open) => { if (!open) onClose() }}
       footer={<Button type="button" disabled={!qr.data} loading={printing} onClick={() => void print()}>Print label</Button>}
     >
@@ -318,7 +320,7 @@ function EquipmentView({ scope }: { scope: IdentityScopeRef }) {
       key: 'asset',
       header: 'Asset',
       accessor: (row) => namedEntry(
-        row.model_name,
+        row.asset_kind === 'cpe_router' ? routerName(row.model_name) : row.model_name,
         row.mac_address ? `${row.serial_number} · MAC ${row.mac_address}` : row.serial_number,
       ),
     },

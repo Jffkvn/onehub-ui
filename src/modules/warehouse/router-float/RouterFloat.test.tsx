@@ -295,7 +295,7 @@ describe('RouterFloatPage warehouse workflow', () => {
 
     // Confirm faulty return via dialog — faulty_to_return locks strictly to Damaged / RMA and requires warehouse inspection note
     fireEvent.click(screen.getByRole('button', { name: 'Confirm return' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Confirm router float return' })
+    const dialog = await screen.findByRole('dialog', { name: 'Confirm router return' })
     expect(within(dialog).getByText('No PON link')).toBeInTheDocument()
     const conditionSelect = within(dialog).getByLabelText(/^Return condition/i)
     expect(conditionSelect).toHaveValue('damaged')
@@ -466,7 +466,7 @@ describe('Technician MyRouterFloatPage & ServiceRequestRoutersPanel', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Report Faulty' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Report faulty float router' })
+    const dialog = await screen.findByRole('dialog', { name: 'Report a faulty router' })
     fireEvent.change(within(dialog).getByLabelText(/Fault description/i), {
       target: { value: 'Power adapter dead on arrival' },
     })

@@ -59,8 +59,12 @@ function getChanges(original: ProjectDetails, fields: ProjectFields): Partial<Pr
   return Object.fromEntries(keys.filter((key) => fields[key] !== original[key]).map((key) => [key, fields[key]]))
 }
 
-function EditorInput({ label, ...input }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
-  return <label className={projectFieldClass}><span>{label}</span><Input {...input} /></label>
+function EditorInput({ label, hint, ...input }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
+  const hintId = useId()
+  return <div className="space-y-1">
+    <label className={projectFieldClass}><span>{label}</span><Input {...input} aria-describedby={hint ? hintId : undefined} /></label>
+    {hint && <p id={hintId} className="text-xs text-muted">{hint}</p>}
+  </div>
 }
 
 export function ProjectEditor({ scope, project, canAssignAll, onSaved, onCancel }: EditorProps) {
@@ -151,8 +155,8 @@ export function ProjectEditor({ scope, project, canAssignAll, onSaved, onCancel 
       <details open={editing || undefined} className="rounded-lg border border-line p-3">
         <summary className="cursor-pointer text-sm font-semibold text-ink">References and budget</summary>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          <EditorInput name="contract_reference" label="Contract reference" maxLength={250} defaultValue={baseline?.contract_reference ?? ''} />
-          <EditorInput name="budget_reference" label="Budget reference" maxLength={250} defaultValue={baseline?.budget_reference ?? ''} />
+          <EditorInput name="contract_reference" label="Client contract or work order number" hint="Use the number on the client’s signed contract or work order, if available." maxLength={250} defaultValue={baseline?.contract_reference ?? ''} />
+          <EditorInput name="budget_reference" label="Internal budget code" hint="Use the code Finance assigned to this project’s budget, if available." maxLength={250} defaultValue={baseline?.budget_reference ?? ''} />
           <EditorInput name="estimated_budget_ugx" label="Estimated budget (UGX)" type="number" min={0} step="0.01"
             defaultValue={baseline?.estimated_budget_ugx ?? ''} />
           <EditorInput name="budget_notes" label="Budget notes" maxLength={2000} defaultValue={baseline?.budget_notes ?? ''} />

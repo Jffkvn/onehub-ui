@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, Clock, FileSpreadsheet, PackagePlus, Router, ShieldAlert, Trash2, Undo2 } from 'lucide-react'
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
 
+import { routerName } from './routerName'
 import { EmptyState } from '@/components/patterns/EmptyState'
 import { KpiCard } from '@/components/patterns/KpiCard'
 import { PageHeader } from '@/components/patterns/PageHeader'
@@ -101,8 +102,8 @@ function RouterReturnDialog({
   return (
     <Dialog
       open
-      title="Confirm router float return"
-      description={`${item.model_name} · SN ${item.serial_number}${item.mac_address ? ` · MAC ${item.mac_address}` : ''}`}
+      title="Confirm router return"
+      description={`${routerName(item.model_name)} · SN ${item.serial_number}${item.mac_address ? ` · MAC ${item.mac_address}` : ''}`}
       onOpenChange={(next) => {
         if (!next && !mutation.isPending) onClose()
       }}
@@ -461,7 +462,7 @@ function FloatIssuancePanel({
                           disabled={disabled}
                           onChange={() => toggleRouter(router.id)}
                         />
-                        <span className="truncate font-medium text-ink">{router.model_name}</span>
+                        <span className="truncate font-medium text-ink">{routerName(router.model_name)}</span>
                         <span className="font-mono text-xs text-soft">{router.serial_number}</span>
                         {router.mac_address && (
                           <span className="hidden sm:inline font-mono text-xs text-muted">
@@ -543,7 +544,7 @@ function FloatIssuancePanel({
                   return (
                     <tr key={row.custody_id} className="text-ink">
                       <td className="px-3 py-2.5">
-                        <p className="font-medium">{row.model_name}</p>
+                        <p className="font-medium">{routerName(row.model_name)}</p>
                         <p className="font-mono text-xs text-soft">
                           {row.serial_number}
                           {row.mac_address ? ` · ${row.mac_address}` : ''}
@@ -1025,7 +1026,7 @@ function ReceiveRouterDeliveryPanel({
                       <td className="p-2 align-top">
                         <Input
                           aria-label={`Model for row ${row.id}`}
-                          value={row.model_name}
+                          value={routerName(row.model_name)}
                           onChange={(e) => updateRow(row.id, { model_name: e.target.value })}
                           className="h-8 text-xs"
                         />

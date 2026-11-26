@@ -188,3 +188,17 @@ it('does not run the cross-project missed update check for a coordinator', () =>
   expect(screen.getByRole('heading', { name: /Permission Denied/i })).toBeInTheDocument()
   expect(rpc).not.toHaveBeenCalled()
 })
+
+it('names the author and uses the action recorded in project history', async () => {
+  rpc.mockImplementation((name: string) => Promise.resolve({
+    error: null, status: 200,
+    data: name === 'rpc_get_project_history' ? [{
+      event_type: 'daily_updates.created', actor_name: 'Olivia Pope',
+      occurred_at: '2026-07-17T12:31:00Z', reason: null,
+    }] : [],
+  }))
+  mount('/projects/' + projectId + '/history')
+
+  expect(await screen.findByText('Olivia Pope added a daily update')).toBeInTheDocument()
+  expect(screen.queryByText('daily updates created')).not.toBeInTheDocument()
+})

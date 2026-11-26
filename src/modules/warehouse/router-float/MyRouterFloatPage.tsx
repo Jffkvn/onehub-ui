@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, Clock, Router, Wrench } from 'lucide-react
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
+import { routerName } from './routerName'
 import { EmptyState } from '@/components/patterns/EmptyState'
 import { KpiCard } from '@/components/patterns/KpiCard'
 import { PageHeader } from '@/components/patterns/PageHeader'
@@ -45,8 +46,8 @@ function FaultyDialog({
   return (
     <Dialog
       open
-      title="Report faulty float router"
-      description={`${item.model_name} · SN ${item.serial_number}`}
+      title="Report a faulty router"
+      description={`${routerName(item.model_name)} · SN ${item.serial_number}`}
       onOpenChange={(next) => {
         if (!next && !isPending) onClose()
       }}
@@ -200,7 +201,7 @@ export function MyRouterFloatPage() {
                     className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-3.5 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="space-y-0.5">
-                      <p className="font-medium text-ink">{item.model_name}</p>
+                      <p className="font-medium text-ink">{routerName(item.model_name)}</p>
                       <p className="font-mono text-xs text-soft">
                         SN: {item.serial_number}
                         {item.mac_address ? ` · MAC: ${item.mac_address}` : ''}
@@ -235,7 +236,7 @@ export function MyRouterFloatPage() {
                   >
                     <div className="space-y-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-ink">{item.model_name}</p>
+                        <p className="font-medium text-ink">{routerName(item.model_name)}</p>
                         <StatusPill tone="success">Ready</StatusPill>
                       </div>
                       <p className="font-mono text-xs text-soft">SN: {item.serial_number}</p>
@@ -276,7 +277,7 @@ export function MyRouterFloatPage() {
                     className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose/40 bg-rose-tint/15 p-4"
                   >
                     <div className="space-y-0.5">
-                      <p className="font-medium text-ink">{item.model_name}</p>
+                      <p className="font-medium text-ink">{routerName(item.model_name)}</p>
                       <p className="font-mono text-xs text-soft">
                         SN: {item.serial_number}
                         {item.mac_address ? ` · MAC: ${item.mac_address}` : ''}

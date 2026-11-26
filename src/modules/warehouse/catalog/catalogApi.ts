@@ -41,10 +41,9 @@ export type StockMovement = {
   movement_type: 'receipt' | 'issue' | 'return' | 'adjustment_add' | 'adjustment_remove'
   created_at: string
   quantity: number
-  reference_id: string
   warehouses: { name: string } | null
   consumable_items: { name: string; sku: string } | null
-  equipment_assets: { model_name: string; serial_number: string } | null
+  equipment_assets: { model_name: string; serial_number: string; asset_kind: Equipment['asset_kind'] } | null
   profiles_performed_by: { display_name: string | null } | null
 }
 
@@ -161,7 +160,7 @@ export async function readStockMovements(page: number, pageSize: number, scope: 
   const assertCurrent = protect(scope, signal)
   const first = page * pageSize
   const result = await getSupabaseClient().from('stock_movements')
-    .select('id,movement_type,created_at,quantity,reference_id,warehouses(name),consumable_items(name,sku),equipment_assets(model_name,serial_number),profiles_performed_by:profiles!performed_by(display_name)', { count: 'exact' })
+    .select('id,movement_type,created_at,quantity,warehouses(name),consumable_items(name,sku),equipment_assets(model_name,serial_number,asset_kind),profiles_performed_by:profiles!performed_by(display_name)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .range(first, first + pageSize - 1)

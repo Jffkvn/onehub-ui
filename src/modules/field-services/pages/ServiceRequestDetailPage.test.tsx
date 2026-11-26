@@ -138,6 +138,24 @@ describe('ServiceRequestDetailPage', () => {
     mockLogContribution.mockReset()
   })
 
+  it('explains service activity in a sentence with the actor', async () => {
+    mockUseAuth.mockReturnValue({
+      status: 'authenticated', session: { userId: ACTOR_ID },
+      access: { profile: { id: ACTOR_ID }, roleKeys: ['service_coordinator'], permissionKeys: ['service_requests.read'] },
+    })
+    mockUseDetail.mockReturnValue({
+      isLoading: false, isError: false, refetch: vi.fn(),
+      data: makeDetail({ viewer_scope: 'full', events: [{
+        id: 'event-1', event_type: 'visit_started', actor_profile_id: ACTOR_ID,
+        actor_name: 'Engineer Alpha', from_status: 'assigned', to_status: 'in_progress',
+        details: {}, occurred_at: '2026-11-17T07:00:00Z',
+      }] }),
+    })
+    renderDetail()
+    expect(await screen.findByText('Engineer Alpha started a site visit')).toBeInTheDocument()
+    expect(screen.queryByText(/→ in_progress/)).not.toBeInTheDocument()
+  })
+
   it('requires meaningful work notes in addition to checked items before completing a visit', async () => {
     mockUseAuth.mockReturnValue({
       status: 'authenticated',

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Router } from 'lucide-react'
 import { useState } from 'react'
 
+import { routerName } from './routerName'
 import { Button } from '@/components/ui/Button'
 import { FieldError } from '@/components/ui/Input'
 import { StatusPill } from '@/components/ui/StatusPill'
@@ -107,7 +108,7 @@ export function ServiceRequestRoutersPanel({
               className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-xs"
             >
               <div>
-                <p className="font-semibold text-ink">{router.model_name}</p>
+                <p className="font-semibold text-ink">{routerName(router.model_name)}</p>
                 <p className="font-mono text-soft">
                   SN: {router.serial_number}
                   {router.mac_address ? ` · MAC: ${router.mac_address}` : ''}
@@ -144,7 +145,7 @@ export function ServiceRequestRoutersPanel({
                 <option value="">Choose confirmed router…</option>
                 {confirmedFloat.map((item) => (
                   <option key={item.equipment_asset_id} value={item.equipment_asset_id}>
-                    {item.model_name} · {item.serial_number}
+                    {routerName(item.model_name)} · {item.serial_number}
                     {item.mac_address ? ` · ${item.mac_address}` : ''}
                   </option>
                 ))}

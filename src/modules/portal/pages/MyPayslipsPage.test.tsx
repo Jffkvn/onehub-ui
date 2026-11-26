@@ -65,6 +65,25 @@ describe('My Pay', () => {
     })
   })
 
+  it('opens the approved pay breakdown on screen without downloading a PDF', async () => {
+    rpc.mockResolvedValue({ error: null, data: [{ payload: { ...payload, payroll_items: [{
+      ...items[0], contractual_gross: 650000, prorated_gross: 650000, allowances: 50000,
+      taxable_gross: 700000, nssf_employee: 35000, other_deductions: 65000, total_deductions: 338250,
+      payroll_line_items: [{ kind: 'deduction', code: 'OTHER', description: 'Staff welfare', amount: 65000 }],
+    }] } }] })
+    openMyPay()
+    fireEvent.click(await screen.findByRole('button', { name: /View payslip for July 2026/ }))
+    expect(screen.getByText('Gross earnings')).toBeInTheDocument()
+    expect(screen.getByText('UGX 700,000')).toBeInTheDocument()
+    expect(screen.getByText('PAYE (income tax)')).toBeInTheDocument()
+    expect(screen.getByText('Staff welfare')).toBeInTheDocument()
+    expect(screen.getByText('UGX 338,250')).toBeInTheDocument()
+    expect(downloadPdf).not.toHaveBeenCalled()
+    expect(rpc).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: /Hide payslip for July 2026/ }))
+    expect(screen.queryByText('Gross earnings')).not.toBeInTheDocument()
+  })
+
   it('holds the download when the audit RPC rejects access', async () => {
     rpc.mockImplementation((name: string) => Promise.resolve(name === 'get_my_payslips'
       ? { data: [{ payload }], error: null }

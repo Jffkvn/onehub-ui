@@ -26,6 +26,7 @@ import { useToast } from '@/components/ui/Toast'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/modules/auth/AuthProvider'
 import {
+  SERVICE_REQUEST_STATUSES,
   SERVICE_SOURCE_LABELS,
   SERVICE_URGENT_REASON_LABELS,
   type ServiceChecklistItem,
@@ -732,6 +733,31 @@ function AssistantContributionPanel({
       </div>
     </div>
   )
+}
+
+const serviceActivity: Record<string, string> = {
+  draft_created: 'created the service request',
+  draft_updated: 'updated the draft request',
+  request_submitted: 'submitted the request for dispatch',
+  request_accepted: 'accepted the request',
+  request_cancelled: 'cancelled the request',
+  crew_assigned: 'assigned a crew',
+  crew_reassigned: 'reassigned the job',
+  visit_superseded_by_reassignment: 'closed the visit when the job was reassigned',
+  assistant_added: 'added an assistant to the crew',
+  visit_started: 'started a site visit',
+  visit_saved: 'saved the visit details',
+  visit_completed: 'completed a site visit',
+  visit_follow_up_required: 'recorded that a follow-up visit is needed',
+  assistant_contribution_logged: 'added notes or evidence to the visit',
+  coordinator_approved: 'approved the completed work',
+  coordinator_requested_rework: 'asked for more work',
+  reported_to_provider: 'reported the work to the provider',
+  provider_confirmed: 'recorded the provider’s confirmation',
+  provider_requested_revisit: 'recorded the provider’s request for another visit',
+  urgent_flag_raised: 'raised an urgent alert',
+  urgent_flag_acknowledged: 'acknowledged the urgent alert',
+  urgent_flag_resolved: 'resolved the urgent alert',
 }
 
 export function ServiceRequestDetailPage() {
@@ -1472,30 +1498,25 @@ export function ServiceRequestDetailPage() {
       {/* Operational Audit Timeline (Full scope only) */}
       {detail.viewer_scope === 'full' && detail.events.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-display text-base font-bold text-ink">Audit Timeline</h2>
+          <h2 className="font-display text-base font-bold text-ink">Service activity</h2>
           <div className="rounded-lg border border-line bg-surface divide-y divide-line">
-            {detail.events.map((ev) => (
-              <div
-                key={ev.id}
-                className="flex flex-col gap-1 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
+            {detail.events.map((ev) => {
+              const nextStatus = SERVICE_REQUEST_STATUSES.find((status) => status === ev.to_status)
+              return (
+                <div
+                  key={ev.id}
+                  className="flex flex-col gap-1 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"
+                >
                   <span className="font-semibold text-ink">
-                    {ev.event_type.replaceAll('_', ' ')}
+                    {(ev.actor_name || 'A team member') + ' ' + (serviceActivity[ev.event_type] ?? 'updated the service request')}
                   </span>
-                  {ev.actor_name && <span className="text-soft"> by {ev.actor_name}</span>}
-                  {(ev.from_status || ev.to_status) && (
-                    <span className="text-muted">
-                      {' '}
-                      ({ev.from_status ?? 'new'} → {ev.to_status ?? '—'})
-                    </span>
-                  )}
+                  <span className="flex flex-wrap items-center gap-2 text-muted">
+                    {nextStatus && ev.from_status !== nextStatus && <ServiceStatusPill status={nextStatus} />}
+                    <ServiceTimestamp value={ev.occurred_at} />
+                  </span>
                 </div>
-                <span className="text-muted shrink-0">
-                  <ServiceTimestamp value={ev.occurred_at} />
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </section>
       )}

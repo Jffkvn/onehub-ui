@@ -133,7 +133,22 @@ describe('Inventory catalog', () => {
     expect(screen.queryByText('Raw backend error')).not.toBeInTheDocument()
   })
 
-  it('shows recorded quantity and reference on the paginated ledger', async () => {
+  it('names routers in stock activity without showing its database reference', async () => {
+    mocks.from.mockReturnValue(tableRequest(() => response([{
+      id: 'movement-one', movement_type: 'return', created_at: '2026-11-20T13:00:00Z', quantity: 1,
+      reference_id: '3d0816e1-e736-4e7d-bad6-2512adb732a8',
+      warehouses: { name: 'Main depot' }, consumable_items: null,
+      equipment_assets: { model_name: 'Huawei HG8245H5', serial_number: 'SN-01', asset_kind: 'cpe_router' },
+      profiles_performed_by: null,
+    }], 1)))
+    openCatalog('ledger')
+
+    const row = await screen.findByRole('row', { name: /Returned.*Huawei HG8245H5 Router/ })
+    expect(within(row).getByText('SN-01')).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Reference' })).not.toBeInTheDocument()
+  })
+
+  it('shows clear movement labels and quantities on the paginated ledger', async () => {
     const movement = (id: string, kind: string, qty: number) => ({
       id, movement_type: kind, created_at: '2026-11-20T13:00:00Z', quantity: qty, reference_id: 'ref-' + id,
       warehouses: { name: 'Main depot' }, consumable_items: { name: 'Fiber cable', sku: 'FIBER-001' },
@@ -146,12 +161,12 @@ describe('Inventory catalog', () => {
 
     const row = await screen.findByRole('row', { name: /Issue.*Fiber cable/ })
     expect(within(row).getByText('-2')).toBeInTheDocument()
-    expect(within(row).getByText('ref-one')).toBeInTheDocument()
+    expect(within(row).queryByText('ref-one')).not.toBeInTheDocument()
     expect(first.range).toHaveBeenCalledWith(0, 24)
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
-    expect(await screen.findByRole('row', { name: /Receipt.*Fiber cable/ })).toBeInTheDocument()
+    expect(await screen.findByRole('row', { name: /Received.*Fiber cable/ })).toBeInTheDocument()
     expect(second.range).toHaveBeenCalledWith(25, 49)
   })
 })
