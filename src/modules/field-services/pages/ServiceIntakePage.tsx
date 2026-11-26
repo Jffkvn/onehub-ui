@@ -74,10 +74,9 @@ export function ServiceIntakePage() {
   const canReadAll = hasPermission('service_requests.read')
   const draftParamId = searchParams.get('draft')
   const rawQueue = searchParams.get('queue')
-  const queueFilter: 'all' | 'draft' | 'ready_to_report' | 'reported_to_provider' =
-    rawQueue === 'draft' || rawQueue === 'ready_to_report' || rawQueue === 'reported_to_provider'
-      ? rawQueue
-      : 'all'
+  const intakeQueues = ['draft', 'queued', 'ongoing', 'ready_to_report', 'reported_to_provider'] as const
+  type IntakeQueue = 'all' | typeof intakeQueues[number]
+  const queueFilter: IntakeQueue = intakeQueues.find((queue) => queue === rawQueue) ?? 'all'
   const rawQueuePage = Number.parseInt(searchParams.get('queuePage') ?? '1', 10)
   const queuePage = Number.isFinite(rawQueuePage) && rawQueuePage > 0 ? rawQueuePage : 1
   const INTAKE_PAGE_SIZE = 25
@@ -106,19 +105,18 @@ export function ServiceIntakePage() {
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
-  const queueStatuses: ServiceRequestStatus[] =
-    queueFilter === 'draft'
-      ? ['draft']
-      : queueFilter === 'ready_to_report'
-        ? ['coordinator_reviewed']
-        : queueFilter === 'reported_to_provider'
-          ? ['reported_to_provider']
-          : ['draft', 'submitted', 'coordinator_reviewed', 'reported_to_provider']
-
+  const queues: Record<IntakeQueue, ServiceRequestStatus[]> = {
+    all: ['draft', 'submitted', 'coordinator_reviewed', 'reported_to_provider'],
+    draft: ['draft'],
+    queued: ['submitted'],
+    ongoing: ['assigned', 'in_progress'],
+    ready_to_report: ['coordinator_reviewed'],
+    reported_to_provider: ['reported_to_provider'],
+  }
   const draftDetailQuery = useServiceRequestDetail(draftParamId ?? undefined, Boolean(draftParamId))
   const listQuery = useServiceRequests(
     {
-      statuses: queueStatuses,
+      statuses: queues[queueFilter],
       limit: INTAKE_PAGE_SIZE,
       offset: (queuePage - 1) * INTAKE_PAGE_SIZE,
     },
@@ -127,7 +125,7 @@ export function ServiceIntakePage() {
   const saveMutation = useSaveServiceDraft()
   const submitMutation = useSubmitServiceRequest()
 
-  const updateQueueFilter = (nextFilter: 'all' | 'draft' | 'ready_to_report' | 'reported_to_provider') => {
+  const updateQueueFilter = (nextFilter: IntakeQueue) => {
     const next = new URLSearchParams(searchParams)
     if (nextFilter === 'all') {
       next.delete('queue')
@@ -555,7 +553,7 @@ export function ServiceIntakePage() {
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display text-base font-bold text-ink">
-              Drafts, Submitted Intake & Provider Reporting Queue
+              Ticket queues
             </h2>
             <span className="text-xs text-muted tabular-nums">
               {totalQueueCount} ticket(s)
@@ -567,6 +565,8 @@ export function ServiceIntakePage() {
               [
                 ['all', 'All Queue'],
                 ['draft', 'Drafts to Submit'],
+                ['queued', 'Awaiting Assignment'],
+                ['ongoing', 'With Field Team'],
                 ['ready_to_report', 'Ready to Report'],
                 ['reported_to_provider', 'Awaiting Provider Confirmation'],
               ] as const

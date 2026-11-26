@@ -79,7 +79,8 @@ export function AttendanceAdminPage() {
   const [fromDate, setFromDate] = useState(() => rangeIsValid ? from.data : addDaysToIsoDate(todayIso, -6))
   const [toDate, setToDate] = useState(() => rangeIsValid ? to.data : todayIso)
   const [departmentId, setDepartmentId] = useState(() => department.success ? department.data : '')
-  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState(() => search.get('status') === 'missing_clock_out' ? 'missing_clock_out' : '')
+  const employee = z.string().uuid().safeParse(search.get('employee'))
   const [registerPage, setRegisterPage] = useState(0)
   const [activeTab, setActiveTab] = useState<string>('register')
 
@@ -101,6 +102,7 @@ export function AttendanceAdminPage() {
     to: toDate,
     departmentId: departmentId || null,
     status: statusFilter || null,
+    employeeId: employee.success ? employee.data : null,
     limit: REGISTER_PAGE_SIZE,
     offset: registerPage * REGISTER_PAGE_SIZE,
   })

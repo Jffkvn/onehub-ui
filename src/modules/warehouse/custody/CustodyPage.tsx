@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Camera, ClipboardList, PackageCheck, Search, Undo2 } from 'lucide-react'
 import { type FormEvent, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { EmptyState } from '@/components/patterns/EmptyState'
 import { PageHeader } from '@/components/patterns/PageHeader'
@@ -145,10 +145,12 @@ function ReturnDialog({
 }
 
 function CustodyContent({ canReturn, mode, scope }: { canReturn: boolean; mode: CustodyMode; scope: IdentityScopeRef }) {
-  const [searchInput, setSearchInput] = useState('')
-  const [search, setSearch] = useState('')
+  const [params] = useSearchParams()
+  const initialAsset = params.get('asset') ?? ''
+  const [searchInput, setSearchInput] = useState(initialAsset)
+  const [search, setSearch] = useState(initialAsset)
   const [scannerOpen, setScannerOpen] = useState(false)
-  const [dueFilter, setDueFilter] = useState<DueFilter>('all')
+  const [dueFilter, setDueFilter] = useState<DueFilter>(() => params.get('due') === 'due' ? 'due' : 'all')
   const [selection, setSelection] = useState<ActiveCustody>()
   const [confirmation, setConfirmation] = useState('')
   const query = useQuery({

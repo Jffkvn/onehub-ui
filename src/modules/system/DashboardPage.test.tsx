@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatServiceActivitySummary } from '@/modules/field-services/api/services'
@@ -178,9 +178,10 @@ describe('Fixed Internet Dashboards & Activity Summary', () => {
       '/services/intake?queue=reported_to_provider',
     )
 
-    expect(screen.getByText(/Ticket Activity \(25 Nov\)/i)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Last 7 Days' }))
-    expect(screen.getByText(/Ticket Activity \(20 Nov – 26 Nov\)/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Log a ticket' })).toHaveAttribute('href', '/services/intake/new')
+    expect(screen.getByRole('link', { name: '2 awaiting assignment' })).toHaveAttribute('href', '/services/intake?queue=queued')
+    expect(screen.getByRole('link', { name: '7 with the field team' })).toHaveAttribute('href', '/services/intake?queue=ongoing')
+    expect(screen.getByText('Yesterday · 25 Nov')).toBeInTheDocument()
   })
 
   it('includes overdue in-progress non-urgent tickets in Coordinator Needs attention now', async () => {
@@ -330,21 +331,15 @@ describe('Fixed Internet Dashboards & Activity Summary', () => {
       'href',
       '/services/dispatch?status=work_completed',
     )
-    expect(screen.getByRole('link', { name: /Ready to Report.*4/i })).toHaveAttribute(
-      'href',
-      '/services/dispatch?status=coordinator_reviewed',
-    )
-    expect(screen.getByRole('link', { name: /Awaiting Provider Confirmation.*2/i })).toHaveAttribute(
-      'href',
-      '/services/dispatch?status=reported_to_provider',
-    )
+    expect(screen.queryByRole('link', { name: /Ready to Report/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Awaiting Provider Confirmation/i })).not.toBeInTheDocument()
 
     // Overdue non-urgent in_progress ticket appears inside Needs attention now
     expect(screen.getByText('SRV-2026-OVERDUE')).toBeInTheDocument()
     expect(screen.getByText('Check SLA')).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(screen.getByText(/Technician CPE Router Float/i)).toBeInTheDocument()
+      expect(screen.getByText(/Router handover issues/i)).toBeInTheDocument()
     })
   })
 

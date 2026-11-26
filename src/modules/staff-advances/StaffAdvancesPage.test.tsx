@@ -78,7 +78,7 @@ describe('Staff advances workspace', () => {
       p_action: 'submit',
       p_payload: { amount: 600000, reason: 'School fees', instalments: 3, deduction_start: '2026-12-01' },
     })
-    expect(rpc).toHaveBeenCalledWith('rpc_list_staff_advance_events', { p_advance_id: advanceId })
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith('rpc_list_staff_advance_events', { p_advance_id: advanceId }))
   })
 
   it('retries an unconfirmed manual repayment using the exact saved request', async () => {

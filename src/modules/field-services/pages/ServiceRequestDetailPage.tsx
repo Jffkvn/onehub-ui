@@ -74,6 +74,7 @@ import { UrgentDeliveryStatusPanel } from '../components/UrgentDeliveryStatusPan
 import { ServiceRequestRoutersPanel } from '@/modules/warehouse/router-float/ServiceRequestRoutersPanel'
 
 function resolveSafeBackPath(rawFrom: string | null, canReadAll: boolean): { path: string; label: string } {
+  if (rawFrom === '/dashboard') return { path: rawFrom, label: 'Back to Dashboard' }
   if (rawFrom && rawFrom.startsWith('/services') && !rawFrom.startsWith('//')) {
     const label = rawFrom.startsWith('/services/my-jobs')
       ? 'Back to My Jobs'

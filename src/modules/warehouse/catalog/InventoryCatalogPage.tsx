@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 import { ArrowRight, Boxes, ClipboardCheck, History, Package, QrCode, Search, Warehouse } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { DataTable, type ColumnDef } from '@/components/patterns/DataTable'
 import { KpiCard } from '@/components/patterns/KpiCard'
@@ -211,12 +211,13 @@ function InventoryOverviewView({ scope }: { scope: IdentityScopeRef }) {
   )
 }
 
-function CatalogSearch({ label, placeholder, onApply }: {
+function CatalogSearch({ label, placeholder, onApply, initialSearch = '' }: {
   label: string
   placeholder: string
   onApply: (search: string) => void
+  initialSearch?: string
 }) {
-  const [draft, setDraft] = useState('')
+  const [draft, setDraft] = useState(initialSearch)
 
   return (
     <form
@@ -253,11 +254,13 @@ function CatalogSearch({ label, placeholder, onApply }: {
 }
 
 function ConsumablesView({ scope }: { scope: IdentityScopeRef }) {
-  const [{ page, search }, setFilters] = useState<ListFilters>({ page: 0, search: '' })
+  const [params] = useSearchParams()
+  const sku = params.get('sku')?.slice(0, 100) ?? ''
+  const [{ page, search }, setFilters] = useState<ListFilters>({ page: 0, search: sku })
   const query = useCatalogQuery(scope, ['consumables', page, search], (signal) => readConsumables(page, search, scope, signal))
   return (
     <>
-      <CatalogSearch label="Search by SKU" placeholder="Search by SKU" onApply={(value) => setFilters({ page: 0, search: value })} />
+      <CatalogSearch label="Search by SKU" initialSearch={sku} placeholder="Search by SKU" onApply={(value) => setFilters({ page: 0, search: value })} />
       <CatalogTable
         query={query}
         columns={consumableColumns}

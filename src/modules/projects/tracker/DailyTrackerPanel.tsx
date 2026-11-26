@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Camera, Plus } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { z } from 'zod'
 import { useId, useRef, useState, type ChangeEvent } from 'react'
 
 import { Button } from '@/components/ui/Button'
@@ -72,11 +74,12 @@ function EvidenceButtons({ scope, projectId, update }: TrackerScope & { update: 
   </div>
 }
 
-function FormDialog({ scope, projectId, update, onClose, onSaved }: TrackerScope & {
-  update?: TrackerUpdate; onClose: () => void; onSaved: (message: string) => void
+function FormDialog({ scope, projectId, update, onClose, onSaved, initialDate }: TrackerScope & {
+  update?: TrackerUpdate
+  initialDate?: string; onClose: () => void; onSaved: (message: string) => void
 }) {
   const today = getTodayIsoInZone('Africa/Kampala')
-  const [date, setDate] = useState(update?.update_date ?? today)
+  const [date, setDate] = useState(update?.update_date ?? initialDate ?? today)
   const [summary, setSummary] = useState(update?.summary ?? '')
   const [savedPhotos, setSavedPhotos] = useState(update?.photo_urls ?? [])
   const [newPhotos, setNewPhotos] = useState<File[]>([])
@@ -223,6 +226,9 @@ function HistoryDialog({ scope, projectId, update, onClose }: TrackerScope & { u
 function TrackerContent({ scope, projectId, projectStatus, permissions }: TrackerScope & {
   projectStatus: string; permissions: string[]
 }) {
+  const [params, setParams] = useSearchParams()
+  const parsedDay = z.string().date().safeParse(params.get('date'))
+  const day = parsedDay.success && parsedDay.data <= getTodayIsoInZone('Africa/Kampala') ? parsedDay.data : undefined
   const [status, setStatus] = useState('')
   const [dialog, setDialog] = useState<TrackerDialog>()
   const [notice, setNotice] = useState('')
@@ -236,7 +242,7 @@ function TrackerContent({ scope, projectId, projectStatus, permissions }: Tracke
   const isAssigned = Boolean(roles.data?.length) && roles.isSuccess
   const canCompose = projectStatus === 'active' && isAssigned
   const canReview = canEndorse && (permissions.includes('projects.update_all') || (roles.isSuccess && roles.data.includes('pm')))
-  const visible = updates.data?.filter((update) => !status || update.status === status) ?? []
+  const visible = updates.data?.filter((update) => (!status || update.status === status) && (!day || update.update_date === day)) ?? []
 
   function saved(message: string) {
     setDialog(undefined)
@@ -255,6 +261,14 @@ function TrackerContent({ scope, projectId, projectStatus, permissions }: Tracke
           onClick={() => { setDialog({ kind: 'compose' }); setNotice('') }}>New daily update</Button>}
       </div>
     </div>
+    {day && <div className="flex items-center gap-2 text-sm text-soft">
+      {formatLocalDateLabel(day)}
+      <Button type="button" size="sm" variant="ghost" onClick={() => {
+        const next = new URLSearchParams(params)
+        next.delete('date')
+        setParams(next, { replace: true })
+      }}>Show all dates</Button>
+    </div>}
     {notice && <p role="status" className="rounded-md bg-emerald-tint p-3 text-sm text-ink">{notice}</p>}
     {(updates.isError || roles.isError) && <div className="flex flex-wrap items-center gap-3">
       <FieldError>{updates.isError ? 'Daily updates could not be loaded.' : 'Your project assignment could not be verified.'}</FieldError>
@@ -294,10 +308,10 @@ function TrackerContent({ scope, projectId, projectStatus, permissions }: Tracke
             </>}
           </div>
         </li>
-      })}</ul> : <p className={card + ' text-sm text-muted'}>{status ? 'No updates match this status.' : 'No daily updates yet.'}</p>
+      })}</ul> : <p className={card + ' text-sm text-muted'}>{day ? 'No updates match this date.' : status ? 'No updates match this status.' : 'No daily updates yet.'}</p>
     )}
     {dialog?.kind === 'history' && <HistoryDialog scope={scope} projectId={projectId} update={dialog.update} onClose={() => setDialog(undefined)} />}
-    {dialog?.kind === 'compose' && <FormDialog scope={scope} projectId={projectId} update={dialog.update} onClose={() => setDialog(undefined)} onSaved={saved} />}
+    {dialog?.kind === 'compose' && <FormDialog scope={scope} projectId={projectId} update={dialog.update} initialDate={day} onClose={() => setDialog(undefined)} onSaved={saved} />}
     {dialog?.kind === 'review' && <ReviewDialog scope={scope} projectId={projectId} decision={dialog.decision}
       update={dialog.update} onClose={() => setDialog(undefined)} onSaved={saved} />}
   </section>

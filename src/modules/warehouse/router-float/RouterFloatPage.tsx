@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, Clock, FileSpreadsheet, PackagePlus, Router, ShieldAlert, Trash2, Undo2 } from 'lucide-react'
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
@@ -212,7 +213,8 @@ function FloatIssuancePanel({
   const [issueCondition, setIssueCondition] = useState('Good working order')
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([])
   const [availableSearch, setAvailableSearch] = useState('')
-  const [activeSearch, setActiveSearch] = useState('')
+  const [params] = useSearchParams()
+  const [activeSearch, setActiveSearch] = useState(() => params.get('serial')?.slice(0, 100) ?? '')
   const [stateFilter, setStateFilter] = useState<StateFilter>('all')
   const [returnTarget, setReturnTarget] = useState<ActiveFloatRouter | null>(null)
   const [actionError, setActionError] = useState<string>()

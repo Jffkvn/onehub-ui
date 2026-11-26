@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowUpRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import type { ComponentType } from 'react'
 
 import { PageHeader } from '@/components/patterns/PageHeader'
 import { Button } from '@/components/ui/Button'
@@ -18,6 +19,11 @@ import {
   ServiceDeskDashboard,
   ServiceTechnicianDashboard,
 } from './FixedInternetDashboards'
+import { DirectorWorkDashboard } from './DirectorWorkDashboard'
+import { HrWorkDashboard } from './HrWorkDashboard'
+import { TowerWorkDashboard } from './TowerWorkDashboard'
+import { WarehouseWorkDashboard } from './WarehouseWorkDashboard'
+import type { WorkAccess } from './useWorkRead'
 import { systemSessionGuard } from './systemSession'
 
 const shortcuts = [
@@ -26,6 +32,12 @@ const shortcuts = [
   'employees', 'reports', 'users', 'settings', 'audit',
   'my-attendance', 'my', 'my-leave', 'my-equipment',
 ]
+const roleDashboards: Partial<Record<string, ComponentType<WorkAccess>>> = {
+  managing_director: DirectorWorkDashboard,
+  hr_admin: HrWorkDashboard,
+  coordinator: TowerWorkDashboard,
+  warehouse_manager: WarehouseWorkDashboard,
+}
 const panel = 'rounded-xl border border-line bg-surface p-4 sm:p-5'
 
 type Metric = {
@@ -126,26 +138,30 @@ export default function DashboardPage() {
   const isFixedInternetView =
     isServiceCoordinatorView || isServiceDeskView || isServiceTechnicianView
 
-  const needsOverview = !isFixedInternetView && !canMonitor && canReadService
-  const canReadJobs = !isFixedInternetView && !canMonitor && !needsOverview && canOpen('service-my-jobs')
-  const monitor = useServiceMonitorSnapshot(live && !isFixedInternetView && canMonitor)
+  const RoleDashboard = roleDashboards[primaryRole ?? '']
+  const hasWorkDashboard = live && Boolean(RoleDashboard)
+  const showFallback = !isFixedInternetView && !hasWorkDashboard
+
+  const needsOverview = showFallback && !canMonitor && canReadService
+  const canReadJobs = showFallback && !canMonitor && !needsOverview && canOpen('service-my-jobs')
+  const monitor = useServiceMonitorSnapshot(live && showFallback && canMonitor)
   const overview = useServiceOverviewCounts(live && needsOverview)
   const jobs = useMyAssignedRequests(1, 0, { enabled: live && canReadJobs, assignmentScope: 'active' })
   const projects = useQuery({
     queryKey: ['dashboard', scope.identityKey, scope.authEpoch, 'active-projects'],
-    enabled: live && !isFixedInternetView && canOpen('projects'),
+    enabled: live && showFallback && canOpen('projects'),
     queryFn: async ({ signal }) => (await listProjects(scope, signal, { page: 0, status: 'active', name: '' })).count,
     retry: false,
   })
   const inventory = useQuery({
     queryKey: ['dashboard', scope.identityKey, scope.authEpoch, 'inventory'],
-    enabled: live && !isFixedInternetView && canOpen('inventory') && canOpen('requests'),
+    enabled: live && showFallback && canOpen('inventory') && canOpen('requests'),
     queryFn: ({ signal }) => readInventoryOverview(scope, signal),
     retry: false,
   })
   const employees = useQuery({
     queryKey: ['dashboard', scope.identityKey, scope.authEpoch, 'employee-records'],
-    enabled: live && !isFixedInternetView && canOpen('employees'),
+    enabled: live && showFallback && canOpen('employees'),
     queryFn: async ({ signal }) => {
       const check = systemSessionGuard(scope)
       const { count, error } = await getSupabaseClient().from('employees').select('id', { count: 'exact', head: true })
@@ -183,8 +199,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard" />
-      {isServiceCoordinatorView ? (
+      {!hasWorkDashboard && !isServiceDeskView && <PageHeader title={isServiceCoordinatorView ? 'Dispatch today' : 'Dashboard'} />}
+      {hasWorkDashboard && RoleDashboard ? (
+        <RoleDashboard scope={scope} canOpen={canOpen} hasPermission={hasPermission} />
+      ) : isServiceCoordinatorView ? (
         <ServiceCoordinatorDashboard
           scope={scope}
           live={live}
@@ -203,6 +221,7 @@ export default function DashboardPage() {
           scope={scope}
           live={live}
           canMyJobs={canOpen('service-my-jobs')}
+          canAttend={canOpen('my-attendance')}
           canWorkVisits={hasPermission('service_visits.work_assigned')}
         />
       ) : (
@@ -224,7 +243,7 @@ export default function DashboardPage() {
           </section>
         </>
       )}
-      {live && <RecentNotifications />}
+      {live && showFallback && <RecentNotifications />}
     </div>
   )
 }

@@ -460,7 +460,7 @@ describe('AppRouter RBAC & Navigation (DEF-01 / DEF-09 / SPA Nav)', () => {
 
   it('navigates between sidebar routes inside SPA without full-page reload', async () => {
     renderRouter('/dashboard', ['hr_admin'], ['employees.read'])
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'People today' })).toBeInTheDocument()
 
     const employeesNav = screen.getByRole('button', { name: /Employees/i })
     fireEvent.click(employeesNav)
@@ -597,12 +597,12 @@ describe('Batch 7F workspace routes', () => {
     { roles: ['service_technician'], grants: ['service_visits.work_assigned'], visible: ['My Router Float'], hidden: ['Router Float'] },
     { roles: ['coordinator'], grants: [], visible: [], hidden: ['Router Float', 'My Router Float'] },
   ] satisfies { roles: UserRole[]; grants: string[]; visible: string[]; hidden: string[] }[])(
-    'shows only permitted Router Float quick actions for $roles',
+    'shows only permitted Router Float links on the dashboard for $roles',
     async ({ roles, grants, visible, hidden }) => {
       renderRouter('/dashboard', roles, grants)
-      const actions = within(await screen.findByRole('region', { name: 'Quick actions' }))
-      for (const name of visible) expect(actions.getByRole('link', { name })).toBeInTheDocument()
-      for (const name of hidden) expect(actions.queryByRole('link', { name })).not.toBeInTheDocument()
+      const main = within(await screen.findByRole('main'))
+      for (const name of visible) expect(await main.findByRole('link', { name })).toBeInTheDocument()
+      for (const name of hidden) expect(main.queryByRole('link', { name })).not.toBeInTheDocument()
     },
   )
 

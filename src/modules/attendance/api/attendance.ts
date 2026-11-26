@@ -211,6 +211,22 @@ export interface RegisterQueryFilters {
   offset?: number
 }
 
+export function readAttendanceRegisterPage(filters: RegisterQueryFilters) {
+  return callAttendanceReadRpc(
+    'rpc_attendance_get_register',
+    {
+      p_from: filters.from ?? null,
+      p_to: filters.to ?? null,
+      p_department_id: filters.departmentId ?? null,
+      p_status: filters.status ?? null,
+      p_employee_id: filters.employeeId ?? null,
+      p_limit: filters.limit ?? 50,
+      p_offset: filters.offset ?? 0,
+    },
+    registerResponseSchema,
+  )
+}
+
 export function useAttendanceRegister(filters: RegisterQueryFilters, enabled = true) {
   const { identityKey, authEpoch, isAuthReady, latestRef } = useIdentityScope()
 
@@ -233,19 +249,7 @@ export function useAttendanceRegister(filters: RegisterQueryFilters, enabled = t
       if (!identityKey || !isAuthReady || signal.aborted) {
         throw new DOMException('Authenticated session is unavailable.', 'AbortError')
       }
-      const res = await callAttendanceReadRpc(
-        'rpc_attendance_get_register',
-        {
-          p_from: filters.from ?? null,
-          p_to: filters.to ?? null,
-          p_department_id: filters.departmentId ?? null,
-          p_status: filters.status ?? null,
-          p_employee_id: filters.employeeId ?? null,
-          p_limit: filters.limit ?? 50,
-          p_offset: filters.offset ?? 0,
-        },
-        registerResponseSchema,
-      )
+      const res = await readAttendanceRegisterPage(filters)
       const latest = latestRef.current
       if (
         signal.aborted ||

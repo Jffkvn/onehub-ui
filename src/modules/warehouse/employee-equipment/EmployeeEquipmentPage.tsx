@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { PageHeader } from '@/components/patterns/PageHeader'
 import { Button } from '@/components/ui/Button'
@@ -159,6 +159,8 @@ function EmployeeEquipmentWorkspace({ manage, scope, canPrepare }: {
 }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const requestId = manage ? params.get('request') : null
   const [offset, setOffset] = useState(0)
   const [action, setAction] = useState<EditAction>()
   const [notice, setNotice] = useState('')
@@ -166,8 +168,18 @@ function EmployeeEquipmentWorkspace({ manage, scope, canPrepare }: {
   const api = employeeEquipmentApi(scope)
   const query = useQuery({
     enabled: scope.isAuthReady,
-    queryKey: ['employee-equipment', scope.identityKey, scope.authEpoch, manage, offset],
-    queryFn: ({ signal }) => api.list(manage, offset, signal),
+    queryKey: ['employee-equipment', scope.identityKey, scope.authEpoch, manage, offset, requestId],
+    queryFn: async ({ signal }) => {
+      if (!requestId) return api.list(manage, offset, signal)
+      for (let start = 0; ; start += employeeEquipmentPageSize) {
+        signal.throwIfAborted()
+        const page = await api.list(manage, start, signal)
+        const selected = page.requests.find((row) => row.id === requestId)
+        if (selected || page.requests.length === 0 || start + employeeEquipmentPageSize >= page.total) {
+          return { ...page, requests: selected ? [selected] : [], total: selected ? 1 : 0 }
+        }
+      }
+    },
   })
 
   function saved(stockId?: string) {
@@ -183,6 +195,7 @@ function EmployeeEquipmentWorkspace({ manage, scope, canPrepare }: {
       eyebrow={manage ? 'Inventory' : 'My Workspace'}
       subtitle={manage ? 'Review staff requests and prepare them for warehouse approval.' : 'Request a tool or check what is issued to you.'}
       actions={!manage && query.data?.linked ? <Button onClick={() => setAction({ kind: 'submit' })}>New equipment request</Button> : undefined} />
+    {requestId && <Link className="text-sm font-medium text-emerald-600 hover:underline" to="/inventory/employee-requests">All employee equipment requests</Link>}
     {notice && <p role="status" className="text-sm text-soft">{notice}</p>}
     {error && <p role="alert" className="text-sm text-soft">{error}</p>}
     {query.isPending && <p role="status" className="text-sm text-muted">Loading equipment requests…</p>}
@@ -200,7 +213,7 @@ function EmployeeEquipmentWorkspace({ manage, scope, canPrepare }: {
       </ul> : <p className="text-sm text-muted">You have no equipment on issue.</p>}
     </section>}
     {query.data && (manage || query.data.linked) && <section className="space-y-3" aria-label="Equipment requests">
-      {!query.data.requests.length && <p className={panel}>No equipment requests on this page.</p>}
+      {!query.data.requests.length && <p className={panel}>{requestId ? 'This equipment request is unavailable.' : 'No equipment requests on this page.'}</p>}
       {query.data.requests.map((request) => {
         const status = statusDetails[request.status]
         const canReview = manage && !request.own_request && ['pending', 'awaiting_approval'].includes(request.status)

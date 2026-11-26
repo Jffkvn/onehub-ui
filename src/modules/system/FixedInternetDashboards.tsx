@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, ArrowUpRight, CheckCircle2, FilePlus2, Router } from 'lucide-react'
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAttendanceTodayContext } from '@/modules/attendance/api/attendance'
+import { formatTimeInZone } from '@/modules/attendance/lib/zonedTime'
 
 import { EmptyState } from '@/components/patterns/EmptyState'
+import { PageHeader } from '@/components/patterns/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { StatusPill } from '@/components/ui/StatusPill'
 import { cn } from '@/lib/utils'
@@ -31,7 +33,7 @@ import {
 import { readMyRouterFloat, readRouterFloatOverview } from '@/modules/warehouse/router-float/routerFloatApi'
 
 const panel = 'rounded-xl border border-line bg-surface p-4 sm:p-5'
-type ActivityRange = 'yesterday' | 'last7Days'
+const liveRefreshMs = 30_000
 
 export type DashboardCardTone = 'default' | 'warning' | 'danger' | 'success'
 
@@ -87,86 +89,14 @@ function ActionCard({
   )
 }
 
-function ServiceActivityBar({
-  summary,
-  isPending,
-  isError,
-  onRetry,
-  showCompleted = false,
-}: {
-  summary?: ServiceActivitySummary
-  isPending: boolean
-  isError: boolean
-  onRetry: () => void
-  showCompleted?: boolean
-}) {
-  const [range, setRange] = useState<ActivityRange>('yesterday')
-  const bucket = summary ? summary[range] : undefined
-
+function YesterdayHandoff({ summary }: { summary: ServiceActivitySummary }) {
+  const day = summary.yesterday
   return (
-    <section aria-label="Service ticket activity" className={panel}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="font-display text-sm font-semibold text-ink">
-            Ticket Activity {bucket ? `(${bucket.label})` : ''}
-          </h2>
-          <p className="text-xs text-muted">Full-day Africa/Kampala counts across all tickets and visits.</p>
-        </div>
-        <div className="flex items-center gap-1.5" role="group" aria-label="Activity timeframe">
-          <Button
-            type="button"
-            size="sm"
-            variant={range === 'yesterday' ? 'primary' : 'outline'}
-            onClick={() => setRange('yesterday')}
-          >
-            Yesterday
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={range === 'last7Days' ? 'primary' : 'outline'}
-            onClick={() => setRange('last7Days')}
-          >
-            Last 7 Days
-          </Button>
-        </div>
-      </div>
-
-      {isPending ? (
-        <p role="status" className="mt-3 text-sm text-soft">
-          Loading recent activity…
-        </p>
-      ) : isError || !bucket ? (
-        <div role="alert" className="mt-3 flex items-center gap-2 text-sm text-soft">
-          <span>Could not load recent activity.</span>
-          <Button type="button" size="sm" variant="outline" onClick={onRetry}>
-            Retry
-          </Button>
-        </div>
-      ) : (
-        <dl className={cn('mt-3 grid gap-3 sm:grid-cols-2', showCompleted && 'sm:grid-cols-3')}>
-          <div className="rounded-lg border border-line bg-canvas px-3 py-2.5">
-            <dt className="text-xs text-muted">Submitted to Dispatch</dt>
-            <dd className="mt-0.5 font-display text-lg font-semibold tabular-nums text-ink">
-              {bucket.submittedCount.toLocaleString('en-UG')}
-            </dd>
-          </div>
-          {showCompleted && (
-            <div className="rounded-lg border border-line bg-canvas px-3 py-2.5">
-              <dt className="text-xs text-muted">Field Visits Completed</dt>
-              <dd className="mt-0.5 font-display text-lg font-semibold tabular-nums text-ink">
-                {bucket.visitsCompletedCount.toLocaleString('en-UG')}
-              </dd>
-            </div>
-          )}
-          <div className="rounded-lg border border-line bg-canvas px-3 py-2.5">
-            <dt className="text-xs text-muted">Provider Confirmed</dt>
-            <dd className="mt-0.5 font-display text-lg font-semibold tabular-nums text-ink">
-              {bucket.providerConfirmedCount.toLocaleString('en-UG')}
-            </dd>
-          </div>
-        </dl>
-      )}
+    <section aria-label="Yesterday’s handoff" className={panel}>
+      <h2 className="font-display text-sm font-semibold text-ink">Yesterday · {day.label}</h2>
+      <p className="mt-1 text-sm text-soft">
+        {day.submittedCount} sent to dispatch · {day.visitsCompletedCount} visits completed · {day.providerConfirmedCount} confirmed by provider
+      </p>
     </section>
   )
 }
@@ -180,23 +110,39 @@ export function ServiceDeskDashboard({
   canIntake: boolean
   canReadService: boolean
 }) {
-  const overview = useServiceOverviewCounts(live && canReadService)
+  const overview = useServiceOverviewCounts(live && canReadService, liveRefreshMs)
   const attentionQueue = useServiceRequests(
     { statuses: ['draft', 'coordinator_reviewed'], limit: 6, offset: 0 },
     live && canReadService,
+    liveRefreshMs,
   )
   const activity = useServiceActivityWindow(live && canReadService)
 
   const queues = overview.data?.queues
   const rows = attentionQueue.data?.rows ?? []
+  const queued = queues?.submitted_count
+  const inField = queues ? queues.assigned_count + queues.in_progress_count : undefined
 
   return (
     <div className="space-y-5">
+      <PageHeader title="Service desk" actions={canIntake &&
+        <Link to="/services/intake/new" className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
+          <FilePlus2 aria-hidden="true" className="h-4 w-4" /> Log a ticket
+        </Link>} />
+      <section className={cn(panel, 'flex flex-wrap items-center justify-between gap-3')} aria-label="Live service queue">
+        <div className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <span className={cn('h-2 w-2 rounded-full', overview.isError ? 'bg-amber' : 'bg-emerald')} aria-hidden="true" />
+          {overview.isError ? 'Queue update unavailable' : 'Today’s queue'}
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-soft">
+          <Link className="hover:underline" to="/services/intake?queue=queued"><strong className="text-ink">{queued ?? '—'}</strong> awaiting assignment</Link>
+          <Link className="hover:underline" to="/services/intake?queue=ongoing"><strong className="text-ink">{inField ?? '—'}</strong> with the field team</Link>
+        </div>
+      </section>
       <section aria-label="Service desk work overview" className="grid gap-3 sm:grid-cols-3">
         <ActionCard
           label="Drafts to Submit"
           value={queues?.draft_count}
-          hint="Saved intake requests not yet sent to Dispatch"
           path="/services/intake?queue=draft"
           tone={(queues?.draft_count ?? 0) > 0 ? 'warning' : 'default'}
           failed={overview.isError}
@@ -205,7 +151,6 @@ export function ServiceDeskDashboard({
         <ActionCard
           label="Ready to Report to Provider"
           value={queues?.coordinator_reviewed_count}
-          hint="Reviewed by coordinator and waiting on desk report"
           path="/services/intake?queue=ready_to_report"
           tone={(queues?.coordinator_reviewed_count ?? 0) > 0 ? 'warning' : 'default'}
           failed={overview.isError}
@@ -214,7 +159,6 @@ export function ServiceDeskDashboard({
         <ActionCard
           label="Awaiting Provider Confirmation"
           value={queues?.reported_to_provider_count}
-          hint="Already reported back; waiting for provider sign-off"
           path="/services/intake?queue=reported_to_provider"
           failed={overview.isError}
           onRetry={() => void overview.refetch()}
@@ -227,17 +171,7 @@ export function ServiceDeskDashboard({
             <h2 id="desk-needs-attention" className="font-display font-semibold text-ink">
               Needs your attention
             </h2>
-            <p className="text-xs text-muted">
-              Draft requests waiting to be submitted and coordinator-reviewed jobs ready to report.
-            </p>
           </div>
-          {canIntake && (
-            <Link to="/services/intake/new">
-              <Button type="button" size="sm" variant="primary" leftIcon={<FilePlus2 className="h-4 w-4" />}>
-                Log New Request
-              </Button>
-            </Link>
-          )}
         </div>
 
         {attentionQueue.isPending ? (
@@ -293,12 +227,7 @@ export function ServiceDeskDashboard({
         )}
       </section>
 
-      <ServiceActivityBar
-        summary={activity.data}
-        isPending={activity.isPending}
-        isError={activity.isError}
-        onRetry={() => void activity.refetch()}
-      />
+      {activity.data && !activity.isError && <YesterdayHandoff summary={activity.data} />}
     </div>
   )
 }
@@ -326,15 +255,15 @@ export function ServiceCoordinatorDashboard({
   canMonitor: boolean
   canRouterFloat: boolean
 }) {
-  const overview = useServiceOverviewCounts(live && canReadService)
+  const overview = useServiceOverviewCounts(live && canReadService, liveRefreshMs)
   const monitor = useServiceMonitorSnapshot(live && canMonitor)
-  const urgentList = useServiceRequests({ urgentOnly: true, limit: 5, offset: 0 }, live && canReadService)
-  const overdueList = useServiceRequests({ overdueOnly: true, limit: 6, offset: 0 }, live && canReadService)
+  const urgentList = useServiceRequests({ urgentOnly: true, limit: 5, offset: 0 }, live && canReadService, liveRefreshMs)
+  const overdueList = useServiceRequests({ overdueOnly: true, limit: 6, offset: 0 }, live && canReadService, liveRefreshMs)
   const queueList = useServiceRequests(
     { statuses: ['submitted', 'work_completed', 'follow_up_required'], limit: 8, offset: 0 },
     live && canReadService,
+    liveRefreshMs,
   )
-  const activity = useServiceActivityWindow(live && canReadService)
   const routerFloat = useQuery({
     queryKey: ['warehouse', 'router-float', 'dashboard', scope.identityKey, scope.authEpoch],
     enabled: live && canRouterFloat && scope.isAuthReady && Boolean(scope.identityKey),
@@ -343,7 +272,6 @@ export function ServiceCoordinatorDashboard({
   })
 
   const queues = overview.data?.queues
-  const ongoingCount = queues ? queues.assigned_count + queues.in_progress_count : undefined
 
   const seen = new Set<string>()
   const priorityRows: ServiceRequestListRow[] = []
@@ -401,51 +329,12 @@ export function ServiceCoordinatorDashboard({
         />
       </section>
 
-      <section aria-label="Pipeline breakdown" className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          {
-            label: 'Ongoing Jobs',
-            value: ongoingCount,
-            path: canMonitor ? '/services/monitor?bucket=ongoing' : '/services/dispatch',
-          },
-          {
-            label: 'Follow-Up / Rework',
-            value: queues?.follow_up_required_count,
-            path: '/services/dispatch?status=follow_up_required',
-          },
-          {
-            label: 'Ready to Report',
-            value: queues?.coordinator_reviewed_count,
-            path: '/services/dispatch?status=coordinator_reviewed',
-          },
-          {
-            label: 'Awaiting Provider Confirmation',
-            value: queues?.reported_to_provider_count,
-            path: '/services/dispatch?status=reported_to_provider',
-          },
-        ].map((item) => (
-          <Link
-            key={item.label}
-            to={item.path}
-            className="group flex items-center justify-between rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm hover:border-emerald"
-          >
-            <span className="text-soft group-hover:text-ink">{item.label}</span>
-            <span className="font-display font-semibold tabular-nums text-ink">
-              {item.value === undefined ? '—' : item.value.toLocaleString('en-UG')}
-            </span>
-          </Link>
-        ))}
-      </section>
-
       <section aria-labelledby="coord-needs-attention" className={cn(panel, 'space-y-3')}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 id="coord-needs-attention" className="font-display font-semibold text-ink">
               Needs attention now
             </h2>
-            <p className="text-xs text-muted">
-              Urgent tickets, overdue SLA jobs, completed visits awaiting review, and unassigned requests.
-            </p>
           </div>
           <Link to="/services/dispatch">
             <Button type="button" size="sm" variant="outline">
@@ -458,7 +347,7 @@ export function ServiceCoordinatorDashboard({
           <p role="status" className="text-sm text-soft">
             Loading priority tickets…
           </p>
-        ) : urgentList.isError && overdueList.isError && queueList.isError ? (
+        ) : urgentList.isError || overdueList.isError || queueList.isError ? (
           <div role="alert" className="flex items-center gap-2 text-sm text-soft">
             <span>Could not load priority tickets.</span>
             <Button
@@ -525,16 +414,16 @@ export function ServiceCoordinatorDashboard({
         )}
       </section>
 
-      {canRouterFloat && (
+      {canRouterFloat && (floatPendingCount > 0 || floatFaultyCount > 0 || routerFloat.isError) && (
         <section aria-label="CPE Router Float oversight" className={panel}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <Router className="h-4 w-4 text-emerald-600" aria-hidden="true" />
               <div>
-                <h2 className="font-display text-sm font-semibold text-ink">Technician CPE Router Float</h2>
+                <h2 className="font-display text-sm font-semibold text-ink">Router handover issues</h2>
                 {routerFloat.data ? (
                   <p className="text-xs text-soft">
-                    With technicians: <strong className="text-ink">{floatItems.length}</strong> · Pending pickup:{' '}
+                    Pending pickup:{' '}
                     <strong className="text-ink">{floatPendingCount}</strong> · Faulty pending return:{' '}
                     <strong className={floatFaultyCount > 0 ? 'text-rose' : 'text-ink'}>{floatFaultyCount}</strong>
                   </p>
@@ -554,13 +443,6 @@ export function ServiceCoordinatorDashboard({
         </section>
       )}
 
-      <ServiceActivityBar
-        summary={activity.data}
-        isPending={activity.isPending}
-        isError={activity.isError}
-        onRetry={() => void activity.refetch()}
-        showCompleted
-      />
     </div>
   )
 }
@@ -569,13 +451,16 @@ export function ServiceTechnicianDashboard({
   scope,
   live,
   canMyJobs,
+  canAttend = false,
   canWorkVisits,
 }: {
   scope: IdentityScopeRef
   live: boolean
   canMyJobs: boolean
+  canAttend?: boolean
   canWorkVisits: boolean
 }) {
+  const shift = useAttendanceTodayContext(live && canAttend)
   const activeJobs = useMyAssignedRequests(6, 0, {
     enabled: live && canMyJobs,
     assignmentScope: 'active',
@@ -605,6 +490,22 @@ export function ServiceTechnicianDashboard({
 
   return (
     <div className="space-y-5">
+      {canAttend && (
+        <section aria-label="Today’s shift" className={cn(panel, 'flex flex-wrap items-center justify-between gap-3')}>
+          <div>
+            <h2 className="font-display font-semibold text-ink">Today’s shift</h2>
+            <p className="mt-0.5 text-sm text-soft">
+              {shift.isError ? 'Attendance unavailable' : !shift.data ? 'Checking attendance…'
+                : !shift.data.enabled ? 'Live clock-ins are paused'
+                  : !shift.data.enrolled ? 'Attendance is not set up for your account'
+                    : shift.data.day?.clock_out_at ? 'Clocked out at ' + formatTimeInZone(shift.data.day.clock_out_at, shift.data.timezone)
+                      : shift.data.day?.clock_in_at ? 'Clocked in at ' + formatTimeInZone(shift.data.day.clock_in_at, shift.data.timezone)
+                        : shift.data.is_workday ? 'Ready to clock in' : 'No shift scheduled today'}
+            </p>
+          </div>
+          <Link to="/my/attendance" className="rounded-lg border border-line px-3 py-2 text-sm font-medium hover:border-emerald">My Attendance</Link>
+        </section>
+      )}
       {pendingCount > 0 && (
         <div
           role="status"
@@ -644,64 +545,12 @@ export function ServiceTechnicianDashboard({
         </div>
       )}
 
-      <section aria-label="Technician work overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <ActionCard
-          label="My Active Jobs"
-          value={activeCount}
-          hint="Assigned, in-progress, or follow-up jobs"
-          path="/services/my-jobs?section=active"
-          tone={(activeCount ?? 0) > 0 ? 'success' : 'default'}
-          failed={activeJobs.isError}
-          onRetry={() => void activeJobs.refetch()}
-        />
-        <ActionCard
-          label="Awaiting Review"
-          value={awaitingReviewCount}
-          hint={
-            historicalCount !== undefined
-              ? `Past closed jobs: ${historicalCount.toLocaleString('en-UG')}`
-              : 'Completed visits awaiting review or sign-off'
-          }
-          path="/services/my-jobs?section=awaiting_review"
-          failed={activeJobs.isError}
-          onRetry={() => void activeJobs.refetch()}
-        />
-        {canWorkVisits && (
-          <>
-            <ActionCard
-              label="Ready to Install"
-              value={floatData?.confirmed_count}
-              hint="Confirmed CPE routers in your bag"
-              path="/services/my-float"
-              failed={myFloat.isError}
-              onRetry={() => void myFloat.refetch()}
-            />
-            <ActionCard
-              label="Float Used"
-              value={floatData ? `${floatData.active_total} / ${floatData.cap}` : undefined}
-              hint={
-                floatData
-                  ? `Pending pickup: ${floatData.pending_count} · Faulty: ${floatData.faulty_count}`
-                  : '5-router allowance including pending & faulty'
-              }
-              path="/services/my-float"
-              tone={faultyCount > 0 ? 'danger' : pendingCount > 0 ? 'warning' : 'default'}
-              failed={myFloat.isError}
-              onRetry={() => void myFloat.refetch()}
-            />
-          </>
-        )}
-      </section>
-
       <section aria-labelledby="tech-active-jobs" className={cn(panel, 'space-y-3')}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 id="tech-active-jobs" className="font-display font-semibold text-ink">
               My Active Service Jobs
             </h2>
-            <p className="text-xs text-muted">
-              Open an active job to start your visit, record installed CPE routers from your float, and attach photos.
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link to="/services/my-jobs?section=historical">
@@ -767,6 +616,51 @@ export function ServiceTechnicianDashboard({
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <section aria-label="Technician work overview" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <ActionCard
+          label="My Active Jobs"
+          value={activeCount}
+          hint="Assigned, in-progress, or follow-up jobs"
+          path="/services/my-jobs?section=active"
+          tone={(activeCount ?? 0) > 0 ? 'success' : 'default'}
+          failed={activeJobs.isError}
+          onRetry={() => void activeJobs.refetch()}
+        />
+        <ActionCard
+          label="Awaiting Review"
+          value={awaitingReviewCount}
+          hint="Completed visits awaiting review or sign-off"
+          path="/services/my-jobs?section=awaiting_review"
+          failed={activeJobs.isError}
+          onRetry={() => void activeJobs.refetch()}
+        />
+        {canWorkVisits && (
+          <>
+            <ActionCard
+              label="Ready to Install"
+              value={floatData?.confirmed_count}
+              hint="Confirmed CPE routers in your bag"
+              path="/services/my-float"
+              failed={myFloat.isError}
+              onRetry={() => void myFloat.refetch()}
+            />
+            <ActionCard
+              label="Float Used"
+              value={floatData ? `${floatData.active_total} / ${floatData.cap}` : undefined}
+              hint={
+                floatData
+                  ? `Pending pickup: ${floatData.pending_count} · Faulty: ${floatData.faulty_count}`
+                  : '5-router allowance including pending & faulty'
+              }
+              path="/services/my-float"
+              tone={faultyCount > 0 ? 'danger' : pendingCount > 0 ? 'warning' : 'default'}
+              failed={myFloat.isError}
+              onRetry={() => void myFloat.refetch()}
+            />
+          </>
         )}
       </section>
     </div>

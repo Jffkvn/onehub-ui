@@ -408,10 +408,11 @@ export function useDispatchCandidates(enabled = true) {
   })
 }
 
-export function useServiceOverviewCounts(enabled = true) {
+export function useServiceOverviewCounts(enabled = true, refreshMs?: number) {
   const { identityKey, authEpoch, isAuthReady, latestRef } = useIdentityScope()
   return useQuery<ServiceOverviewCounts>({
     queryKey: ['field-services', 'overview-counts', identityKey ?? 'anonymous', authEpoch],
+    refetchInterval: refreshMs,
     enabled: enabled && isAuthReady && Boolean(identityKey),
     retry: (failureCount, error) =>
       classifyServiceRpcError(error) === 'uncertain' && failureCount < 1,
@@ -444,26 +445,49 @@ export interface ServiceRequestsFilter {
   offset?: number
 }
 
-export function useServiceRequests(filters: ServiceRequestsFilter = {}, enabled = true) {
+function normalizeRequestFilters(filters: ServiceRequestsFilter) {
+  return {
+    requestType: filters.requestType ?? null,
+    status: filters.status ?? null,
+    statuses: filters.statuses?.length ? [...filters.statuses] : null,
+    urgentOnly: Boolean(filters.urgentOnly),
+    overdueOnly: Boolean(filters.overdueOnly),
+    search: filters.search?.trim() || null,
+    limit: filters.limit ?? 50,
+    offset: filters.offset ?? 0,
+  }
+}
+
+export function readServiceRequestPage(filters: ServiceRequestsFilter) {
+  const { requestType, status, statuses, urgentOnly, overdueOnly, search, limit, offset } = normalizeRequestFilters(filters)
+  return callServiceReadRpc(
+    'rpc_service_list_requests',
+    {
+      p_request_type: requestType,
+      p_status: status,
+      p_search: search,
+      p_limit: limit,
+      p_offset: offset,
+      p_urgent_only: urgentOnly,
+      p_statuses: statuses,
+      p_overdue_only: overdueOnly,
+    },
+    serviceRequestsListResponseSchema,
+  )
+}
+
+export function useServiceRequests(filters: ServiceRequestsFilter = {}, enabled = true, refreshMs?: number) {
   const { identityKey, authEpoch, isAuthReady, latestRef } = useIdentityScope()
-  const requestType = filters.requestType ?? null
-  const status = filters.status ?? null
-  const statuses =
-    filters.statuses && filters.statuses.length > 0 ? [...filters.statuses] : null
-  const urgentOnly = Boolean(filters.urgentOnly)
-  const overdueOnly = Boolean(filters.overdueOnly)
-  const search = filters.search?.trim() || null
-  const limit = filters.limit ?? 50
-  const offset = filters.offset ?? 0
 
   return useQuery<ServiceRequestsListResponse>({
     queryKey: [
       'field-services',
       'requests',
-      { requestType, status, statuses, urgentOnly, overdueOnly, search, limit, offset },
+      normalizeRequestFilters(filters),
       identityKey ?? 'anonymous',
       authEpoch,
     ],
+    refetchInterval: refreshMs,
     enabled: enabled && isAuthReady && Boolean(identityKey),
     retry: (failureCount, error) =>
       classifyServiceRpcError(error) === 'uncertain' && failureCount < 1,
@@ -471,20 +495,7 @@ export function useServiceRequests(filters: ServiceRequestsFilter = {}, enabled 
       if (!identityKey || !isAuthReady || signal.aborted) {
         throw new DOMException('Authenticated session is unavailable.', 'AbortError')
       }
-      const res = await callServiceReadRpc(
-        'rpc_service_list_requests',
-        {
-          p_request_type: requestType,
-          p_status: status,
-          p_search: search,
-          p_limit: limit,
-          p_offset: offset,
-          p_urgent_only: urgentOnly,
-          p_statuses: statuses,
-          p_overdue_only: overdueOnly,
-        },
-        serviceRequestsListResponseSchema,
-      )
+      const res = await readServiceRequestPage(filters)
       const latest = latestRef.current
       if (!latest.isAuthReady || latest.identityKey !== identityKey || latest.authEpoch !== authEpoch) {
         throw new DOMException('Account session changed while loading requests.', 'AbortError')

@@ -24,6 +24,7 @@ const advanceSchema = z.object({
   amount: number,
   reason: z.string(),
   date_issued: z.string(),
+  submitted_at: z.string().nullish(),
   deduction_start_month: z.string(),
   num_instalments: number,
   monthly_deduction: number,
@@ -78,10 +79,10 @@ async function readForSession<T>(scope: IdentityScopeRef, read: () => Promise<T>
   return data
 }
 
-export function useAdvances(scope: IdentityScopeRef, manage: boolean) {
+export function useAdvances(scope: IdentityScopeRef, manage: boolean, enabled = true) {
   return useQuery({
     queryKey: [...advanceKey(scope), 'list', manage],
-    enabled: scope.isAuthReady,
+    enabled: scope.isAuthReady && enabled,
     queryFn: () => readForSession(scope, async () => advanceSchema.array().parse(
       await advanceRpc(manage ? 'rpc_list_hr_staff_advances' : 'rpc_list_my_staff_advances'),
     )),
