@@ -69,13 +69,25 @@ describe('Navigation Config & Permissions Gating', () => {
 
   it('correctly gates navigation items for an Employee with minimal permissions', () => {
     const employeePermissions = ['performance.read_self', 'training.read_self']
-    const nav = getPermittedNav(employeePermissions)
+    const nav = getPermittedNav(employeePermissions, ['employee'])
 
     const sectionNames = nav.map((n) => n.section)
-    expect(sectionNames).toEqual(['Overview'])
+    expect(sectionNames).toEqual(['Home', 'My Self-Service'])
 
-    const overviewItems = nav.find((n) => n.section === 'Overview')?.items.map((i) => i.path)
-    expect(overviewItems).toEqual(['/dashboard', '/my', '/my/leave', '/my/payslips', '/my/performance', '/my/training'])
+    const homeItems = nav.find((n) => n.section === 'Home')?.items.map((i) => i.path)
+    expect(homeItems).toEqual(['/dashboard'])
+    expect(nav.find((n) => n.section === 'Home')?.hideHeader).toBe(true)
+
+    const selfService = nav.find((n) => n.section === 'My Self-Service')
+    expect(selfService?.collapsible).toBe(true)
+    expect(selfService?.defaultCollapsed).toBe(false)
+    expect(selfService?.items.map((i) => i.path)).toEqual([
+      '/my',
+      '/my/leave',
+      '/my/payslips',
+      '/my/performance',
+      '/my/training',
+    ])
   })
 
   it('gates announcement reading and management independently', () => {
@@ -101,15 +113,13 @@ describe('Navigation Config & Permissions Gating', () => {
       'payroll.export',
       'reports.view',
     ]
-    const nav = getPermittedNav(hrPermissions)
+    const nav = getPermittedNav(hrPermissions, ['hr_admin'])
     const sectionNames = nav.map((n) => n.section)
 
-    expect(sectionNames).toContain('Overview')
-    expect(sectionNames).toContain('People')
-    expect(sectionNames).toContain('Finance')
-    expect(sectionNames).toContain('System')
+    expect(sectionNames).toEqual(['Home', 'Finance', 'System', 'People', 'My Self-Service'])
     expect(sectionNames).not.toContain('Inventory')
     expect(sectionNames).not.toContain('Custody')
+    expect(nav.find((n) => n.section === 'My Self-Service')?.defaultCollapsed).toBe(true)
   })
 
   it('correctly gates navigation for a Warehouse Manager', () => {
@@ -122,14 +132,70 @@ describe('Navigation Config & Permissions Gating', () => {
       'inventory.issue',
       'reports.view',
     ]
-    const nav = getPermittedNav(warehousePermissions)
+    const nav = getPermittedNav(warehousePermissions, ['warehouse_manager'])
     const sectionNames = nav.map((n) => n.section)
 
-    expect(sectionNames).toContain('Overview')
-    expect(sectionNames).toContain('Inventory')
-    expect(sectionNames).toContain('Custody')
+    expect(sectionNames).toEqual(['Home', 'Inventory', 'Custody', 'Operations', 'System', 'My Self-Service'])
     expect(sectionNames).not.toContain('People')
     expect(sectionNames).not.toContain('Finance')
+    expect(nav.find((n) => n.section === 'Custody')?.items.map((i) => i.path)).toEqual([
+      '/custody/returns',
+      '/custody/issued',
+    ])
+  })
+
+  it('orders operational sections first for Fixed Internet, Tower, and Admin roles with My Self-Service collapsed last', () => {
+    const deskNav = getPermittedNav(
+      ['service_requests.intake', 'service_requests.read', 'service_requests.report_provider'],
+      ['service_desk'],
+    )
+    expect(deskNav.map((n) => n.section)).toEqual(['Home', 'Service Ops', 'My Self-Service'])
+    expect(deskNav[1].items.map((i) => i.path).slice(0, 2)).toEqual([
+      '/services/intake',
+      '/services/dispatch',
+    ])
+    expect(deskNav[2].defaultCollapsed).toBe(true)
+
+    const coordNav = getPermittedNav(
+      [
+        'service_requests.read',
+        'service_requests.dispatch',
+        'service_requests.monitor',
+        'service_requests.intake',
+        'router_float.read',
+      ],
+      ['service_coordinator'],
+    )
+    expect(coordNav.map((n) => n.section)).toEqual(['Home', 'Service Ops', 'Inventory', 'My Self-Service'])
+    expect(coordNav[1].items.map((i) => i.path).slice(0, 3)).toEqual([
+      '/services/dispatch',
+      '/services/monitor',
+      '/services/intake',
+    ])
+    expect(coordNav[3].defaultCollapsed).toBe(true)
+
+    const techNav = getPermittedNav(
+      ['service_visits.read_assigned', 'service_visits.work_assigned'],
+      ['service_technician'],
+    )
+    expect(techNav.map((n) => n.section)).toEqual(['Home', 'Service Ops', 'My Self-Service'])
+    expect(techNav[1].items.map((i) => i.path)).toEqual([
+      '/services/my-jobs',
+      '/services/my-float',
+      '/services',
+    ])
+    expect(techNav[2].defaultCollapsed).toBe(true)
+
+    const adminNav = getPermittedNav(
+      ['users.read', 'company.manage', 'audit.read', 'employees.read', 'projects.read_all'],
+      ['super_admin'],
+    )
+    expect(adminNav.map((n) => n.section)).toEqual(['Home', 'System', 'Operations', 'People', 'My Self-Service'])
+    expect(adminNav[1].items.map((i) => i.path)).toEqual([
+      '/system/users',
+      '/system/settings',
+      '/system/audit',
+    ])
   })
 
   it('shows stock requests for warehouse staff with only issue permission', () => {
@@ -140,7 +206,7 @@ describe('Navigation Config & Permissions Gating', () => {
   it('omits empty sections when no items are permitted in that section', () => {
     const nav = getPermittedNav([])
     const sectionNames = nav.map((n) => n.section)
-    expect(sectionNames).toEqual(['Overview'])
+    expect(sectionNames).toEqual(['Home', 'My Self-Service'])
   })
 
   it('aligns Project Cash and Projects nav with DEF-01 and Launch projects.read grants', () => {

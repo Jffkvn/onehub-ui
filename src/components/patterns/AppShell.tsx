@@ -72,6 +72,9 @@ export function AppShell({
     suppliedGroups ||
     groupedSections.map((sec) => ({
       title: sec.section,
+      hideHeader: sec.hideHeader,
+      collapsible: sec.collapsible,
+      defaultCollapsed: sec.defaultCollapsed,
       items: sec.items.map(
         (item): SidebarNavItem => ({
           id: item.key,

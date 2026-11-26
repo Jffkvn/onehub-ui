@@ -112,7 +112,7 @@ describe('MyServiceJobsPage', () => {
       (
         limit: number,
         offset: number,
-        opts?: { assignmentScope?: 'active' | 'historical' | null },
+        opts?: { assignmentScope?: 'active' | 'awaiting_review' | 'historical' | null },
       ) => {
         if (opts?.assignmentScope === 'active') {
           return {
@@ -121,6 +121,7 @@ describe('MyServiceJobsPage', () => {
             data: {
               total_count: 60,
               active_count: 60,
+              awaiting_review_count: 0,
               historical_count: 35,
               limit,
               offset,
@@ -145,12 +146,28 @@ describe('MyServiceJobsPage', () => {
             },
           }
         }
+        if (opts?.assignmentScope === 'awaiting_review') {
+          return {
+            isLoading: false,
+            isError: false,
+            data: {
+              total_count: 0,
+              active_count: 60,
+              awaiting_review_count: 0,
+              historical_count: 35,
+              limit,
+              offset,
+              rows: [],
+            },
+          }
+        }
         return {
           isLoading: false,
           isError: false,
           data: {
             total_count: 35,
             active_count: 60,
+            awaiting_review_count: 0,
             historical_count: 35,
             limit,
             offset,
@@ -197,5 +214,120 @@ describe('MyServiceJobsPage', () => {
       'href',
       `/services/requests/hist-26?from=${encodeURIComponent('/services/my-jobs?pastPage=2')}`,
     )
+  })
+
+  it('keeps provider-confirmed tickets with retained assignments out of Active and separates Awaiting Review', () => {
+    mockUseMyAssigned.mockImplementation(
+      (limit: number, offset: number, opts?: { assignmentScope?: 'active' | 'awaiting_review' | 'historical' | null }) => {
+        if (opts?.assignmentScope === 'active') {
+          return {
+            isLoading: false,
+            isError: false,
+            data: {
+              total_count: 1,
+              active_count: 1,
+              awaiting_review_count: 1,
+              historical_count: 1,
+              limit,
+              offset,
+              rows: [
+                {
+                  id: 'act-in-prog',
+                  internal_code: 'SRV-2026-INPROG',
+                  request_type: 'maintenance',
+                  priority: 'high',
+                  site_name: 'Ntinda Active',
+                  area_label: 'Ntinda',
+                  status: 'in_progress',
+                  provider_name: 'Roke Telkom',
+                  provider_deadline_at: null,
+                  is_active_assignment: true,
+                  my_role: 'lead',
+                  open_visit_id: 'visit-1',
+                  open_urgent_count: 0,
+                  version: 1,
+                },
+                {
+                  // Simulates legacy/stale retained assignment on a closed ticket
+                  id: 'closed-retained',
+                  internal_code: 'SRV-2026-CLOSED',
+                  request_type: 'installation',
+                  priority: 'normal',
+                  site_name: 'Bugolobi Confirmed',
+                  area_label: 'Bugolobi',
+                  status: 'provider_confirmed',
+                  provider_name: 'Roke Telkom',
+                  provider_deadline_at: null,
+                  is_active_assignment: true,
+                  my_role: 'lead',
+                  open_visit_id: null,
+                  open_urgent_count: 0,
+                  version: 6,
+                },
+              ],
+            },
+          }
+        }
+        if (opts?.assignmentScope === 'awaiting_review') {
+          return {
+            isLoading: false,
+            isError: false,
+            data: {
+              total_count: 1,
+              active_count: 1,
+              awaiting_review_count: 1,
+              historical_count: 1,
+              limit,
+              offset,
+              rows: [
+                {
+                  id: 'rev-1',
+                  internal_code: 'SRV-2026-REVIEW',
+                  request_type: 'installation',
+                  priority: 'normal',
+                  site_name: 'Kololo Review',
+                  area_label: 'Kololo',
+                  status: 'work_completed',
+                  provider_name: 'Roke Telkom',
+                  provider_deadline_at: null,
+                  is_active_assignment: false,
+                  assignment_bucket: 'awaiting_review',
+                  my_role: 'lead',
+                  open_visit_id: null,
+                  open_urgent_count: 0,
+                  version: 3,
+                },
+              ],
+            },
+          }
+        }
+        return {
+          isLoading: false,
+          isError: false,
+          data: {
+            total_count: 1,
+            active_count: 1,
+            awaiting_review_count: 1,
+            historical_count: 1,
+            limit,
+            offset,
+            rows: [],
+          },
+        }
+      },
+    )
+
+    renderMyJobs('/services/my-jobs?section=active')
+
+    expect(screen.getByText('SRV-2026-INPROG')).toBeInTheDocument()
+    expect(screen.queryByText('SRV-2026-CLOSED')).not.toBeInTheDocument()
+    expect(screen.queryByText('SRV-2026-REVIEW')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Awaiting Review \(1\)/i }))
+    expect(screen.getByText('SRV-2026-REVIEW')).toBeInTheDocument()
+    expect(screen.getByTestId('my-jobs-loc')).toHaveTextContent('/services/my-jobs?section=awaiting_review')
+
+    fireEvent.click(screen.getByRole('button', { name: /Past Jobs \(1\)/i }))
+    expect(screen.getByText('SRV-2026-CLOSED')).toBeInTheDocument()
   })
 })

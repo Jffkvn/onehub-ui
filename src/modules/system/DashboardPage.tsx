@@ -13,6 +13,11 @@ import { getEffectiveServiceAccess, useMyAssignedRequests, useServiceMonitorSnap
 import { isSafeNotificationPath, useMarkNotificationRead, useNotificationBellState, type NotificationItem } from '@/modules/notifications/api/notifications'
 import { listProjects } from '@/modules/projects/projectApi'
 import { readInventoryOverview } from '@/modules/warehouse/catalog/catalogApi'
+import {
+  ServiceCoordinatorDashboard,
+  ServiceDeskDashboard,
+  ServiceTechnicianDashboard,
+} from './FixedInternetDashboards'
 import { systemSessionGuard } from './systemSession'
 
 const shortcuts = [
@@ -96,27 +101,51 @@ export default function DashboardPage() {
   const actions = shortcuts.flatMap((key) => permitted.find((item) => item.key === key) ?? [])
   const canOpen = (key: string) => permitted.some((item) => item.key === key)
   const live = scope.isAuthReady && !(import.meta.env.DEV && auth.devPreviewRole)
+  const primaryRole = roleKeys.find((role) => role !== 'employee') ?? roleKeys[0]
+  const canReadService = hasPermission('service_requests.read')
   const canMonitor = canOpen('service-monitor')
-  const needsOverview = !canMonitor && hasPermission('service_requests.read')
-  const canReadJobs = !canMonitor && !needsOverview && canOpen('service-my-jobs')
-  const monitor = useServiceMonitorSnapshot(live && canMonitor)
+  const canDispatchOrReview =
+    hasPermission('service_requests.dispatch') || hasPermission('service_requests.review')
+  const canIntakeOrReport =
+    hasPermission('service_requests.intake') || hasPermission('service_requests.report_provider')
+
+  const isServiceCoordinatorView =
+    canDispatchOrReview &&
+    ((!canOpen('projects') && !canOpen('employees')) ||
+      primaryRole === 'service_coordinator' ||
+      primaryRole === 'service_dispatch_backup')
+  const isServiceDeskView =
+    !isServiceCoordinatorView && canIntakeOrReport && !canDispatchOrReview && canReadService
+  const isServiceTechnicianView =
+    !isServiceCoordinatorView &&
+    !isServiceDeskView &&
+    hasPermission('service_visits.read_assigned') &&
+    !canReadService &&
+    ((!canOpen('projects') && !canOpen('employees')) || primaryRole === 'service_technician')
+
+  const isFixedInternetView =
+    isServiceCoordinatorView || isServiceDeskView || isServiceTechnicianView
+
+  const needsOverview = !isFixedInternetView && !canMonitor && canReadService
+  const canReadJobs = !isFixedInternetView && !canMonitor && !needsOverview && canOpen('service-my-jobs')
+  const monitor = useServiceMonitorSnapshot(live && !isFixedInternetView && canMonitor)
   const overview = useServiceOverviewCounts(live && needsOverview)
   const jobs = useMyAssignedRequests(1, 0, { enabled: live && canReadJobs, assignmentScope: 'active' })
   const projects = useQuery({
     queryKey: ['dashboard', scope.identityKey, scope.authEpoch, 'active-projects'],
-    enabled: live && canOpen('projects'),
+    enabled: live && !isFixedInternetView && canOpen('projects'),
     queryFn: async ({ signal }) => (await listProjects(scope, signal, { page: 0, status: 'active', name: '' })).count,
     retry: false,
   })
   const inventory = useQuery({
     queryKey: ['dashboard', scope.identityKey, scope.authEpoch, 'inventory'],
-    enabled: live && canOpen('inventory') && canOpen('requests'),
+    enabled: live && !isFixedInternetView && canOpen('inventory') && canOpen('requests'),
     queryFn: ({ signal }) => readInventoryOverview(scope, signal),
     retry: false,
   })
   const employees = useQuery({
     queryKey: ['dashboard', scope.identityKey, scope.authEpoch, 'employee-records'],
-    enabled: live && canOpen('employees'),
+    enabled: live && !isFixedInternetView && canOpen('employees'),
     queryFn: async ({ signal }) => {
       const check = systemSessionGuard(scope)
       const { count, error } = await getSupabaseClient().from('employees').select('id', { count: 'exact', head: true })
@@ -155,21 +184,46 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Dashboard" />
-      {metrics.length > 0 && <section aria-label="Work overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
-      </section>}
-      <section aria-labelledby="dashboard-actions" className="space-y-3">
-        <h2 id="dashboard-actions" className="font-display font-semibold">Quick actions</h2>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {actions.map((item) => (
-            <Link key={item.key} to={item.path} className="group flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm font-medium hover:border-emerald hover:text-emerald-600">
-              <item.icon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted" />
-              {item.label}
-              <ArrowUpRight aria-hidden="true" className="ml-auto h-4 w-4 shrink-0 text-muted group-hover:text-emerald" />
-            </Link>
-          ))}
-        </div>
-      </section>
+      {isServiceCoordinatorView ? (
+        <ServiceCoordinatorDashboard
+          scope={scope}
+          live={live}
+          canReadService={canReadService}
+          canMonitor={canMonitor}
+          canRouterFloat={hasPermission('router_float.read')}
+        />
+      ) : isServiceDeskView ? (
+        <ServiceDeskDashboard
+          live={live}
+          canIntake={hasPermission('service_requests.intake')}
+          canReadService={canReadService}
+        />
+      ) : isServiceTechnicianView ? (
+        <ServiceTechnicianDashboard
+          scope={scope}
+          live={live}
+          canMyJobs={canOpen('service-my-jobs')}
+          canWorkVisits={hasPermission('service_visits.work_assigned')}
+        />
+      ) : (
+        <>
+          {metrics.length > 0 && <section aria-label="Work overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
+          </section>}
+          <section aria-labelledby="dashboard-actions" className="space-y-3">
+            <h2 id="dashboard-actions" className="font-display font-semibold">Quick actions</h2>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {actions.map((item) => (
+                <Link key={item.key} to={item.path} className="group flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm font-medium hover:border-emerald hover:text-emerald-600">
+                  <item.icon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted" />
+                  {item.label}
+                  <ArrowUpRight aria-hidden="true" className="ml-auto h-4 w-4 shrink-0 text-muted group-hover:text-emerald" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
       {live && <RecentNotifications />}
     </div>
   )

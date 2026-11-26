@@ -26,6 +26,7 @@ import {
   serviceMonitorSnapshotSchema,
   serviceMutationEnvelopeSchema,
   serviceOverviewCountsSchema,
+  serviceActivitySummaryResponseSchema,
   serviceRequestDetailSchema,
   serviceRequestsListResponseSchema,
   type CoordinatorUrgentFlagsListResponse,
@@ -33,6 +34,7 @@ import {
   type MyAssignedRequestsResponse,
   type ReissueUrgentDeliveryResult,
   type RetryUrgentDeliveryResult,
+  type ServiceActivitySummaryResponse,
   type ServiceChecklistsResponse,
   type ServiceMonitorBucket,
   type ServiceMonitorQueueResponse,
@@ -436,6 +438,7 @@ export interface ServiceRequestsFilter {
   status?: ServiceRequestStatus | null
   statuses?: readonly ServiceRequestStatus[] | null
   urgentOnly?: boolean
+  overdueOnly?: boolean
   search?: string | null
   limit?: number
   offset?: number
@@ -448,6 +451,7 @@ export function useServiceRequests(filters: ServiceRequestsFilter = {}, enabled 
   const statuses =
     filters.statuses && filters.statuses.length > 0 ? [...filters.statuses] : null
   const urgentOnly = Boolean(filters.urgentOnly)
+  const overdueOnly = Boolean(filters.overdueOnly)
   const search = filters.search?.trim() || null
   const limit = filters.limit ?? 50
   const offset = filters.offset ?? 0
@@ -456,7 +460,7 @@ export function useServiceRequests(filters: ServiceRequestsFilter = {}, enabled 
     queryKey: [
       'field-services',
       'requests',
-      { requestType, status, statuses, urgentOnly, search, limit, offset },
+      { requestType, status, statuses, urgentOnly, overdueOnly, search, limit, offset },
       identityKey ?? 'anonymous',
       authEpoch,
     ],
@@ -477,6 +481,7 @@ export function useServiceRequests(filters: ServiceRequestsFilter = {}, enabled 
           p_offset: offset,
           p_urgent_only: urgentOnly,
           p_statuses: statuses,
+          p_overdue_only: overdueOnly,
         },
         serviceRequestsListResponseSchema,
       )
@@ -489,7 +494,7 @@ export function useServiceRequests(filters: ServiceRequestsFilter = {}, enabled 
   })
 }
 
-export type MyAssignedRequestsScope = 'active' | 'historical'
+export type MyAssignedRequestsScope = 'active' | 'awaiting_review' | 'historical'
 
 export function useMyAssignedRequests(
   limit = 50,
@@ -1290,6 +1295,82 @@ export function useReissueUrgentNotification() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['field-services'] })
+    },
+  })
+}
+
+export interface ServiceActivityCounts {
+  fromDate: string
+  toDate: string
+  label: string
+  submittedCount: number
+  visitsCompletedCount: number
+  providerConfirmedCount: number
+}
+
+export interface ServiceActivitySummary {
+  today: string
+  yesterday: ServiceActivityCounts
+  last7Days: ServiceActivityCounts
+}
+
+function formatShortIsoDay(isoDate: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate)
+  if (!match) return isoDate
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0))
+  return new Intl.DateTimeFormat('en-UG', {
+    timeZone: 'UTC',
+    day: 'numeric',
+    month: 'short',
+  }).format(date)
+}
+
+export function formatServiceActivitySummary(
+  response: ServiceActivitySummaryResponse,
+): ServiceActivitySummary {
+  return {
+    today: response.today,
+    yesterday: {
+      fromDate: response.yesterday.from_date,
+      toDate: response.yesterday.to_date,
+      label: formatShortIsoDay(response.yesterday.from_date),
+      submittedCount: response.yesterday.submitted_count,
+      visitsCompletedCount: response.yesterday.visits_completed_count,
+      providerConfirmedCount: response.yesterday.provider_confirmed_count,
+    },
+    last7Days: {
+      fromDate: response.last_7_days.from_date,
+      toDate: response.last_7_days.to_date,
+      label: `${formatShortIsoDay(response.last_7_days.from_date)} – ${formatShortIsoDay(response.last_7_days.to_date)}`,
+      submittedCount: response.last_7_days.submitted_count,
+      visitsCompletedCount: response.last_7_days.visits_completed_count,
+      providerConfirmedCount: response.last_7_days.provider_confirmed_count,
+    },
+  }
+}
+
+export function useServiceActivityWindow(enabled = true) {
+  const { identityKey, authEpoch, isAuthReady, latestRef } = useIdentityScope()
+
+  return useQuery<ServiceActivitySummary>({
+    queryKey: ['field-services', 'activity-summary', identityKey ?? 'anonymous', authEpoch],
+    enabled: enabled && isAuthReady && Boolean(identityKey),
+    retry: (failureCount, error) =>
+      classifyServiceRpcError(error) === 'uncertain' && failureCount < 1,
+    queryFn: async ({ signal }) => {
+      if (!identityKey || !isAuthReady || signal.aborted) {
+        throw new DOMException('Authenticated session is unavailable.', 'AbortError')
+      }
+      const res = await callServiceReadRpc(
+        'rpc_service_get_activity_summary',
+        undefined,
+        serviceActivitySummaryResponseSchema,
+      )
+      const latest = latestRef.current
+      if (!latest.isAuthReady || latest.identityKey !== identityKey || latest.authEpoch !== authEpoch) {
+        throw new DOMException('Account session changed while loading service activity.', 'AbortError')
+      }
+      return formatServiceActivitySummary(res)
     },
   })
 }

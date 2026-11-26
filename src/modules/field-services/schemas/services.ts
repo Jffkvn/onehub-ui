@@ -28,6 +28,23 @@ export const SERVICE_REQUEST_STATUSES = [
 ] as const
 export type ServiceRequestStatus = (typeof SERVICE_REQUEST_STATUSES)[number]
 
+export const TECHNICIAN_ACTIONABLE_STATUSES: readonly ServiceRequestStatus[] = [
+  'assigned',
+  'in_progress',
+  'follow_up_required',
+]
+export const TECHNICIAN_REVIEW_STATUSES: readonly ServiceRequestStatus[] = [
+  'work_completed',
+  'coordinator_reviewed',
+  'reported_to_provider',
+]
+export const TECHNICIAN_CLOSED_STATUSES: readonly ServiceRequestStatus[] = [
+  'provider_confirmed',
+  'cancelled',
+]
+export const TECHNICIAN_ASSIGNMENT_BUCKETS = ['active', 'awaiting_review', 'historical'] as const
+export type TechnicianAssignmentBucket = (typeof TECHNICIAN_ASSIGNMENT_BUCKETS)[number]
+
 export const SERVICE_URGENT_REASON_CODES = [
   'safety_hazard',
   'access_blocked',
@@ -189,6 +206,7 @@ export const myAssignedRequestRowSchema = z.object({
   provider_name: z.string(),
   provider_deadline_at: z.string().nullable(),
   is_active_assignment: z.boolean(),
+  assignment_bucket: z.enum(TECHNICIAN_ASSIGNMENT_BUCKETS).optional(),
   my_role: z.enum(['lead', 'assistant']).nullable(),
   open_visit_id: z.string().uuid().nullable(),
   open_urgent_count: z.number().int().nonnegative(),
@@ -199,12 +217,62 @@ export type MyAssignedRequestRow = z.infer<typeof myAssignedRequestRowSchema>
 export const myAssignedRequestsResponseSchema = z.object({
   total_count: z.number().int().nonnegative().optional(),
   active_count: z.number().int().nonnegative().optional(),
+  awaiting_review_count: z.number().int().nonnegative().optional(),
   historical_count: z.number().int().nonnegative().optional(),
   limit: z.number().int().positive(),
   offset: z.number().int().nonnegative(),
   rows: z.array(myAssignedRequestRowSchema),
 })
 export type MyAssignedRequestsResponse = z.infer<typeof myAssignedRequestsResponseSchema>
+
+export const serviceActivityBucketSchema = z.object({
+  from_date: z.string(),
+  to_date: z.string(),
+  submitted_count: z.number().int().nonnegative(),
+  visits_completed_count: z.number().int().nonnegative(),
+  provider_confirmed_count: z.number().int().nonnegative(),
+})
+export type ServiceActivityBucketResponse = z.infer<typeof serviceActivityBucketSchema>
+
+export const serviceActivitySummaryResponseSchema = z.object({
+  today: z.string(),
+  yesterday: serviceActivityBucketSchema,
+  last_7_days: serviceActivityBucketSchema,
+})
+export type ServiceActivitySummaryResponse = z.infer<typeof serviceActivitySummaryResponseSchema>
+
+export function classifyTechnicianAssignmentBucket(
+  row: Pick<MyAssignedRequestRow, 'status' | 'is_active_assignment' | 'assignment_bucket'>,
+): TechnicianAssignmentBucket {
+  if (TECHNICIAN_CLOSED_STATUSES.includes(row.status)) {
+    return 'historical'
+  }
+  if (row.assignment_bucket) {
+    return row.assignment_bucket
+  }
+  if (!row.is_active_assignment) {
+    return 'historical'
+  }
+  if (TECHNICIAN_REVIEW_STATUSES.includes(row.status)) {
+    return 'awaiting_review'
+  }
+  if (TECHNICIAN_ACTIONABLE_STATUSES.includes(row.status)) {
+    return 'active'
+  }
+  return 'historical'
+}
+
+export function isServiceRequestOverdue(
+  row: Pick<ServiceRequestListRow, 'provider_deadline_at' | 'status'>,
+  nowMs = Date.now(),
+): boolean {
+  if (!row.provider_deadline_at) return false
+  if (row.status === 'draft' || row.status === 'provider_confirmed' || row.status === 'cancelled') {
+    return false
+  }
+  const deadlineMs = Date.parse(row.provider_deadline_at)
+  return Number.isFinite(deadlineMs) && deadlineMs < nowMs
+}
 
 export const serviceCategoryOverviewCountsSchema = z.object({
   total: z.number().int().nonnegative(),

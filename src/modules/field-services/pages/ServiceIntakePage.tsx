@@ -19,6 +19,7 @@ import {
   SERVICE_TYPE_LABELS,
   type ServicePriority,
   type ServiceReceivedSource,
+  type ServiceRequestStatus,
   type ServiceRequestType,
 } from '../schemas/services'
 import {
@@ -72,6 +73,11 @@ export function ServiceIntakePage() {
   const canIntake = hasPermission('service_requests.intake')
   const canReadAll = hasPermission('service_requests.read')
   const draftParamId = searchParams.get('draft')
+  const rawQueue = searchParams.get('queue')
+  const queueFilter: 'all' | 'draft' | 'ready_to_report' | 'reported_to_provider' =
+    rawQueue === 'draft' || rawQueue === 'ready_to_report' || rawQueue === 'reported_to_provider'
+      ? rawQueue
+      : 'all'
   const rawQueuePage = Number.parseInt(searchParams.get('queuePage') ?? '1', 10)
   const queuePage = Number.isFinite(rawQueuePage) && rawQueuePage > 0 ? rawQueuePage : 1
   const INTAKE_PAGE_SIZE = 25
@@ -100,10 +106,19 @@ export function ServiceIntakePage() {
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
+  const queueStatuses: ServiceRequestStatus[] =
+    queueFilter === 'draft'
+      ? ['draft']
+      : queueFilter === 'ready_to_report'
+        ? ['coordinator_reviewed']
+        : queueFilter === 'reported_to_provider'
+          ? ['reported_to_provider']
+          : ['draft', 'submitted', 'coordinator_reviewed', 'reported_to_provider']
+
   const draftDetailQuery = useServiceRequestDetail(draftParamId ?? undefined, Boolean(draftParamId))
   const listQuery = useServiceRequests(
     {
-      statuses: ['draft', 'submitted', 'coordinator_reviewed', 'reported_to_provider'],
+      statuses: queueStatuses,
       limit: INTAKE_PAGE_SIZE,
       offset: (queuePage - 1) * INTAKE_PAGE_SIZE,
     },
@@ -111,6 +126,17 @@ export function ServiceIntakePage() {
   )
   const saveMutation = useSaveServiceDraft()
   const submitMutation = useSubmitServiceRequest()
+
+  const updateQueueFilter = (nextFilter: 'all' | 'draft' | 'ready_to_report' | 'reported_to_provider') => {
+    const next = new URLSearchParams(searchParams)
+    if (nextFilter === 'all') {
+      next.delete('queue')
+    } else {
+      next.set('queue', nextFilter)
+    }
+    next.delete('queuePage')
+    setSearchParams(next, { replace: true })
+  }
 
   const updateQueuePage = (nextPage: number) => {
     const next = new URLSearchParams(searchParams)
@@ -527,13 +553,34 @@ export function ServiceIntakePage() {
 
       {canReadAll && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display text-base font-bold text-ink">
               Drafts, Submitted Intake & Provider Reporting Queue
             </h2>
             <span className="text-xs text-muted tabular-nums">
               {totalQueueCount} ticket(s)
             </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter intake queue">
+            {(
+              [
+                ['all', 'All Queue'],
+                ['draft', 'Drafts to Submit'],
+                ['ready_to_report', 'Ready to Report'],
+                ['reported_to_provider', 'Awaiting Provider Confirmation'],
+              ] as const
+            ).map(([key, label]) => (
+              <Button
+                key={key}
+                type="button"
+                size="sm"
+                variant={queueFilter === key ? 'primary' : 'outline'}
+                onClick={() => updateQueueFilter(key)}
+              >
+                {label}
+              </Button>
+            ))}
           </div>
 
           {listQuery.isLoading ? (

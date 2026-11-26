@@ -260,4 +260,38 @@ describe('ServiceIntakePage', () => {
     expect(screen.getByText('Could not load intake queue')).toBeInTheDocument()
     expect(screen.getByText('RPC offline')).toBeInTheDocument()
   })
+
+  it('filters intake queue cleanly via ?queue= URL params and filter buttons', () => {
+    renderIntake('/services/intake?queue=ready_to_report')
+
+    expect(mockUseServiceRequests).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statuses: ['coordinator_reviewed'],
+        limit: 25,
+        offset: 0,
+      }),
+      true,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Awaiting Provider Confirmation' }))
+    expect(screen.getByTestId('intake-location')).toHaveTextContent(
+      '/services/intake?queue=reported_to_provider',
+    )
+    expect(mockUseServiceRequests).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        statuses: ['reported_to_provider'],
+        limit: 25,
+        offset: 0,
+      }),
+      true,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drafts to Submit' }))
+    expect(mockUseServiceRequests).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        statuses: ['draft'],
+      }),
+      true,
+    )
+  })
 })

@@ -14,10 +14,12 @@ import {
   SERVICE_STATUS_LABELS,
   SERVICE_TYPE_LABELS,
   SERVICE_URGENT_REASON_LABELS,
+  isServiceRequestOverdue,
   type CoordinatorUrgentFlagRow,
   type ServiceRequestStatus,
   type ServiceRequestType,
 } from '../schemas/services'
+import { StatusPill } from '@/components/ui/StatusPill'
 import {
   getEffectiveServiceAccess,
   useServiceRequests,
@@ -74,6 +76,7 @@ export function ServiceDispatchPage() {
     : null
 
   const urgentOnly = searchParams.get('urgent') === '1'
+  const overdueOnly = searchParams.get('overdue') === '1'
   const [searchDraft, setSearchDraft] = useState(searchParams.get('q') ?? '')
   const searchQuery = searchParams.get('q') ?? ''
 
@@ -84,6 +87,7 @@ export function ServiceDispatchPage() {
     requestType,
     status: statusFilter,
     urgentOnly,
+    overdueOnly,
     search: searchQuery || null,
     limit: DISPATCH_PAGE_SIZE,
     offset: (page - 1) * DISPATCH_PAGE_SIZE,
@@ -327,11 +331,12 @@ export function ServiceDispatchPage() {
           <Button
             type="button"
             size="sm"
-            variant={!statusFilter && !urgentOnly ? 'primary' : 'outline'}
+            variant={!statusFilter && !urgentOnly && !overdueOnly ? 'primary' : 'outline'}
             onClick={() => {
               const next = new URLSearchParams(searchParams)
               next.delete('status')
               next.delete('urgent')
+              next.delete('overdue')
               next.delete('page')
               setSearchParams(next, { replace: true })
             }}
@@ -377,6 +382,14 @@ export function ServiceDispatchPage() {
           >
             Open Urgent Flags
           </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={overdueOnly ? 'danger' : 'outline'}
+            onClick={() => updateParam('overdue', overdueOnly ? null : '1')}
+          >
+            Overdue SLA
+          </Button>
         </div>
       </div>
 
@@ -417,6 +430,11 @@ export function ServiceDispatchPage() {
                       status={row.highest_urgent_status}
                       count={row.open_urgent_count || undefined}
                     />
+                    {isServiceRequestOverdue(row) && (
+                      <StatusPill tone="danger" size="sm">
+                        Overdue SLA
+                      </StatusPill>
+                    )}
                   </div>
                   <p className="text-sm font-medium text-ink">
                     {row.site_name}{' '}
