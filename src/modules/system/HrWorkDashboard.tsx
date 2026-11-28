@@ -1,4 +1,4 @@
-import { CalendarDays } from 'lucide-react'
+import { CalendarCheck, CalendarDays, CalendarRange, CircleCheck, ClockAlert, ClipboardList, Info, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { readAttendanceRegisterPage, useAttendanceSetupOverview } from '@/modules/attendance/api/attendance'
@@ -106,12 +106,14 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
     queues.push(
       {
         key: 'clocked-in', title: 'Clocked in', context: 'Today', load: register,
+        accent: { icon: CircleCheck, tone: 'teal' },
         rows: todayRows.filter((row) => row.clock_in_at).map((row) =>
           attendanceRow(row, formatTimeInZone(row.clock_in_at, row.timezone))),
         empty: 'No clock-ins recorded today.', href: registerLink(today),
       },
       {
         key: 'late', title: 'Late arrivals', context: 'Today', load: register, priority: true,
+        accent: { icon: ClockAlert, tone: 'amber' },
         rows: todayRows.filter((row) => row.clock_in_at && row.punctuality === 'late').map((row) =>
           attendanceRow(row, formatTimeInZone(row.clock_in_at, row.timezone))),
         empty: 'No late arrivals recorded today.',
@@ -119,6 +121,7 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
     )
     const missed: WorkQueue = {
       key: 'missed-clock-outs', title: 'Missed clock-outs', context: 'Yesterday · ' + dayLabel(yesterday),
+      accent: { icon: ClockAlert, tone: 'amber' },
       load: register, priority: true, href: registerLink(yesterday, undefined, 'missing_clock_out'),
       rows: rows.filter((row) => row.local_date === yesterday && row.effective_state === 'missing_clock_out')
         .map((row) => attendanceRow(row, row.clock_in_at ? 'In at ' + formatTimeInZone(row.clock_in_at, row.timezone) : undefined)),
@@ -129,6 +132,7 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
   if (canLeave) {
     queues.splice(Math.min(2, queues.length), 0, {
       key: 'on-leave', title: 'On leave', context: 'Today', load: leave,
+      accent: { icon: CalendarCheck, tone: 'blue' },
       rows: onLeave.map((row) => ({
         id: row.id, title: row.employee_name, detail: row.leave_type_name,
         href: '/people/leave?request=' + row.id, action: 'View',
@@ -137,6 +141,7 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
     })
     const leaveQueue: WorkQueue = {
       key: 'leave-requests', title: 'Leave requests to review', context: 'New and carried over', load: leave,
+      accent: { icon: CalendarRange, tone: 'blue' },
       rows: waitingLeave.map((row) => ({
         id: row.id, title: row.employees?.legal_name ?? 'Employee leave request',
         detail: [
@@ -155,6 +160,7 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
   if (canAdvances) {
     const advancesQueue: WorkQueue = {
       key: 'advance-requests', title: 'Salary advances to review', context: 'New and carried over', load: advances,
+      accent: { icon: Wallet, tone: 'violet' },
       rows: (advances.data ?? []).filter((row) => row.status === 'pending').reverse().map((row) => ({
         id: row.id, title: row.employee_name,
         detail: ['UGX ' + row.amount.toLocaleString('en-UG'), requestAge(row.submitted_at, today, yesterday)].filter(Boolean).join(' · '),
@@ -195,13 +201,16 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
       queues={queues} overviewQueues={followUps}
       action={canOpen('reports') && <Link className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-300" to="/system/reports">HR reports</Link>}>
       {canAttendance && !setup.isError && setup.data?.policy.enabled === false && (
-        <p role="status" className="rounded-lg border border-line bg-surface px-4 py-3 text-sm text-soft">
-          Live clock-ins are paused. The dashboard shows attendance already recorded.
+        <p role="status" className="flex items-start gap-2.5 rounded-lg border border-blue/20 bg-blue-tint/60 px-4 py-3 text-sm text-soft">
+          <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-blue-700 dark:text-blue-300" />
+          <span>Live clock-ins are paused. The dashboard shows attendance already recorded.</span>
         </p>
       )}
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {reviewQueues.length > 0 && <section className={workPanel} aria-label="Waiting for HR">
-          <h2 className="mb-3 font-display font-semibold text-ink">Waiting for HR</h2>
+          <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold text-ink">
+            <ClipboardList aria-hidden="true" className="size-5 text-teal-700 dark:text-teal-300" /> Waiting for HR
+          </h2>
           <div className="space-y-4 divide-y divide-line">
             {reviewQueues.map((queue, index) => <div key={queue.key} className={index ? 'pt-4' : undefined}>
               <QueuePanel queue={queue} limit={3} embedded />
@@ -211,8 +220,11 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
         <div className="space-y-4">
           {clockOuts && <QueuePanel queue={clockOuts} limit={3} />}
           {canOpen('employees') && <section className={workPanel} aria-label="Coming up">
-            <h2 className="mb-3 flex items-center gap-2 font-display font-semibold text-ink">
-              <CalendarDays aria-hidden="true" className="h-4 w-4 text-emerald-600" /> Coming up this week
+            <h2 className="mb-3 flex items-center gap-3 font-display text-lg font-semibold text-ink">
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-emerald-tint text-emerald-800 dark:text-emerald-300">
+                <CalendarDays aria-hidden="true" className="size-5" />
+              </span>
+              Coming up this week
             </h2>
             <QueueState load={people}>
               {milestones.length > 0

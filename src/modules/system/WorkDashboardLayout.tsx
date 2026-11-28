@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowUpRight, ChevronRight } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, ChevronRight, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
@@ -11,6 +11,35 @@ export const workCardTones = {
   warning: 'border-amber/40 bg-amber-tint/70',
   danger: 'border-rose/40 bg-rose-tint/70',
   success: 'border-emerald/40 bg-emerald-tint/70',
+}
+
+const queueAccents = {
+  teal: {
+    surface: 'border-emerald/30 bg-emerald-tint',
+    icon: 'bg-emerald/20 text-emerald-800 dark:text-emerald-300',
+  },
+  amber: {
+    surface: 'border-amber/30 bg-amber-tint',
+    icon: 'bg-amber/20 text-amber-900 dark:text-amber-300',
+  },
+  blue: {
+    surface: 'border-blue/30 bg-blue-tint',
+    icon: 'bg-blue/15 text-blue-800 dark:text-blue-300',
+  },
+  violet: {
+    surface: 'border-violet/30 bg-violet-tint',
+    icon: 'bg-violet/15 text-violet-800 dark:text-violet-300',
+  },
+}
+
+type QueueAccent = { icon: LucideIcon; tone: keyof typeof queueAccents }
+
+function QueueIcon({ icon: Icon, tone }: QueueAccent) {
+  return (
+    <span className={cn('grid size-10 shrink-0 place-items-center rounded-lg', queueAccents[tone].icon)}>
+      <Icon className="size-5" aria-hidden="true" />
+    </span>
+  )
 }
 
 export type WorkRow = {
@@ -35,6 +64,7 @@ export type WorkQueue = {
   rows: WorkRow[]
   load: WorkLoad
   priority?: boolean
+  accent?: QueueAccent
   href?: string
 }
 
@@ -57,10 +87,15 @@ export function QueuePanel({ queue, limit, embedded = false }: {
   const visibleRows = queue.rows.slice(0, limit)
   return (
     <section className={embedded ? 'min-w-0' : workPanel} aria-label={queue.title}>
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h2 className="font-display text-lg font-semibold text-ink">{queue.title}</h2>
-          <p className="text-sm text-soft">{queue.context}</p>
+      <div className={cn('mb-3 flex flex-wrap justify-between gap-2', queue.accent
+        ? cn('items-center rounded-lg px-3 py-2.5', queueAccents[queue.accent.tone].surface)
+        : 'items-baseline')}>
+        <div className="flex min-w-0 items-center gap-3">
+          {queue.accent && <QueueIcon {...queue.accent} />}
+          <div className="min-w-0">
+            <h2 className="font-display text-lg font-semibold text-ink">{queue.title}</h2>
+            <p className="text-sm text-soft">{queue.context}</p>
+          </div>
         </div>
         {!queue.load.isPending && !queue.load.isError && limit !== undefined && queue.rows.length > 0 && (
           <Link className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-300" to={'?focus=' + queue.key}>
@@ -118,13 +153,17 @@ export function WorkDashboard({
       {queues.map((queue) => (
         <Link key={queue.key} to={'?focus=' + queue.key}
           className={cn(workPanel, 'group flex items-start justify-between gap-2 hover:border-emerald focus-visible:outline focus-visible:outline-emerald',
+            queue.accent && queueAccents[queue.accent.tone].surface,
             queue.priority && queue.rows.length > 0 && !queue.load.isPending && !queue.load.isError && workCardTones.warning)}>
-          <div className="min-w-0">
-            <p className="break-words text-base font-medium text-ink">{queue.title}</p>
-            <p className="mt-1 font-display text-3xl font-semibold tabular-nums text-ink">
-              {queue.load.isPending || queue.load.isError ? '—' : queue.rows.length.toLocaleString('en-UG')}
-            </p>
-            <p className="mt-0.5 text-sm text-soft">{queue.context}</p>
+          <div className="flex min-w-0 items-start gap-3">
+            {queue.accent && <QueueIcon {...queue.accent} />}
+            <div className="min-w-0">
+              <p className="break-words text-base font-medium text-ink">{queue.title}</p>
+              <p className="mt-1 font-display text-3xl font-semibold tabular-nums text-ink">
+                {queue.load.isPending || queue.load.isError ? '—' : queue.rows.length.toLocaleString('en-UG')}
+              </p>
+              <p className="mt-0.5 text-sm text-soft">{queue.context}</p>
+            </div>
           </div>
           <ArrowUpRight className="h-4 w-4 shrink-0 text-muted group-hover:text-emerald" aria-hidden="true" />
         </Link>
