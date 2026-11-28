@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatServiceActivitySummary } from '@/modules/field-services/api/services'
@@ -151,6 +151,16 @@ describe('Fixed Internet Dashboards & Activity Summary', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('puts permitted finance work first on the CFO dashboard', () => {
+    mockUseAuth.mockReturnValue(makeAuth('cfo', ['payroll.read', 'cash_advances.view_all']))
+    renderDashboard()
+
+    const actions = within(screen.getByRole('region', { name: 'Quick actions' }))
+    expect(actions.getAllByRole('link')[0]).toHaveAttribute('href', '/finance/payroll')
+    expect(actions.getByRole('link', { name: 'Project Cash' })).toHaveAttribute('href', '/ops/cash')
+    expect(actions.queryByRole('link', { name: 'Staff Advances' })).not.toBeInTheDocument()
   })
 
   it('renders Service Desk cards strictly matching intake queues without calling monitor snapshot', () => {

@@ -1,4 +1,4 @@
-import { ArrowUpRight, Boxes, Building2, Radio } from 'lucide-react'
+import { ArrowUpRight, Boxes, Building2, ClockAlert, Radio, Router, TrafficCone } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { getTodayIsoInZone } from '@/modules/attendance/lib/zonedTime'
@@ -6,7 +6,7 @@ import { readServiceRequestPage, useServiceActivityWindow } from '@/modules/fiel
 import type { ServiceRequestListRow } from '@/modules/field-services/schemas/services'
 import { readRouterFloatOverview } from '@/modules/warehouse/router-float/routerFloatApi'
 import { closureStats, dayLabel, fallsOnDay, previousWorkDate, readPages, workTimezone } from './workDashboardData'
-import { QueueState, WorkDashboard, type WorkQueue, workPanel } from './WorkDashboardLayout'
+import { QueueState, WorkDashboard, WorkIcon, type WorkQueue, workPanel } from './WorkDashboardLayout'
 import { useWorkRead, type WorkAccess } from './useWorkRead'
 
 type LateProject = {
@@ -79,12 +79,14 @@ export function DirectorWorkDashboard({ scope, canOpen, hasPermission }: WorkAcc
   )
   const stats = closureStats(closed)
   if (canReadService) queues.push({
-    key: 'overdue-sla', title: 'Overdue SLA', context: 'Open service tickets past deadline', priority: true, load: overdue,
+    key: 'overdue-sla', title: 'Overdue SLA', context: 'Open service tickets past deadline', priority: 'danger', load: overdue,
+    accent: { icon: ClockAlert, tone: 'blue' },
     rows: (overdue.data ?? []).map(ticketRow), empty: 'No open service tickets are past their deadline.',
     href: canOpen('service-monitor') ? '/services/monitor?bucket=overdue' : undefined,
   })
   if (canProjectDetails) queues.push({
-    key: 'projects-past-target', title: 'Projects past target', context: 'Open sites past their expected end date', priority: true, load: projects,
+    key: 'projects-past-target', title: 'Projects past target', context: 'Open sites past their expected end date', priority: 'warning', load: projects,
+    accent: { icon: TrafficCone, tone: 'amber' },
     rows: (projects.data ?? []).map((row) => ({
       id: row.id, title: row.name, detail: row.expected_end_date
         ? dayLabel(row.expected_end_date) + ' target · ' + (Date.parse(today) - Date.parse(row.expected_end_date)) / 86_400_000 + ' days past target'
@@ -94,7 +96,8 @@ export function DirectorWorkDashboard({ scope, canOpen, hasPermission }: WorkAcc
     empty: 'No open construction projects are past their target date.',
   })
   if (canFloat) queues.push({
-    key: 'faulty-routers', title: 'Faulty routers to return', context: 'Currently held by technicians', priority: true, load: routers,
+    key: 'faulty-routers', title: 'Faulty routers to return', context: 'Currently held by technicians', priority: 'warning', load: routers,
+    accent: { icon: Router, tone: 'violet' },
     rows: (routers.data?.active_float ?? []).filter((row) => row.float_state === 'faulty_to_return').map((row) => ({
       id: row.custody_id, title: 'CPE Router (' + row.model_name + ')', detail: row.custodian_name + ' · ' + row.serial_number,
       href: '/inventory/router-float?serial=' + encodeURIComponent(row.serial_number),
@@ -131,13 +134,15 @@ export function DirectorWorkDashboard({ scope, canOpen, hasPermission }: WorkAcc
     action={canOpen('service-monitor') && <Link className="text-sm font-medium text-emerald-600 hover:underline" to="/services/monitor">Operations monitor</Link>}>
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
       {canReadService && <section className={workPanel} aria-label="Fixed Internet">
-        <h3 className="mb-3 flex items-center gap-2 font-display font-semibold text-ink"><Radio className="h-4 w-4 text-emerald-600" aria-hidden="true" /> Fixed Internet</h3>
+        <h2 className="mb-4 flex items-center gap-3 font-display text-lg font-semibold text-ink">
+          <WorkIcon icon={Radio} tone="blue" /> Fixed Internet
+        </h2>
         <QueueState load={activity}>
-          {activity.data && <dl className="grid grid-cols-2 gap-3 border-b border-line pb-3 sm:grid-cols-3">
-            <div><dt className="text-xs text-muted">Submitted</dt><dd className="text-lg font-semibold">{activity.data.yesterday.submittedCount}</dd></div>
-            <div><dt className="text-xs text-muted">Visits completed</dt><dd className="text-lg font-semibold">{activity.data.yesterday.visitsCompletedCount}</dd></div>
-            <div><dt className="text-xs text-muted">Provider confirmed</dt>
-              <dd><Link to="?focus=provider-confirmed" className="inline-flex items-center gap-1 text-lg font-semibold text-emerald-600 hover:underline">
+          {activity.data && <dl className="grid gap-3 rounded-lg bg-blue-tint p-3 sm:grid-cols-3">
+            <div><dt className="text-sm text-soft">Submitted</dt><dd className="font-display text-2xl font-semibold tabular-nums">{activity.data.yesterday.submittedCount}</dd></div>
+            <div><dt className="text-sm text-soft">Visits completed</dt><dd className="font-display text-2xl font-semibold tabular-nums">{activity.data.yesterday.visitsCompletedCount}</dd></div>
+            <div><dt className="text-sm text-soft">Provider confirmed</dt>
+              <dd><Link to="?focus=provider-confirmed" className="inline-flex items-center gap-1 font-display text-2xl font-semibold tabular-nums text-teal-700 hover:underline dark:text-teal-300">
                 {activity.data.yesterday.providerConfirmedCount} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
               </Link></dd></div>
           </dl>}
@@ -157,7 +162,9 @@ export function DirectorWorkDashboard({ scope, canOpen, hasPermission }: WorkAcc
       </section>}
       <div className="space-y-4">
         {canReadTracker && <section className={workPanel} aria-label="Construction">
-          <h3 className="mb-2 flex items-center gap-2 font-display font-semibold text-ink"><Building2 className="h-4 w-4 text-emerald-600" aria-hidden="true" /> Construction</h3>
+          <h2 className="mb-3 flex items-center gap-3 font-display text-lg font-semibold text-ink">
+            <WorkIcon icon={Building2} tone="teal" /> Construction
+          </h2>
           <QueueState load={updates}>
             {updates.data?.length ? <>
               <Link to="?focus=construction-updates" className="text-sm font-medium text-emerald-600 hover:underline">{updates.data.length} site {updates.data.length === 1 ? 'update' : 'updates'}</Link>
@@ -166,7 +173,9 @@ export function DirectorWorkDashboard({ scope, canOpen, hasPermission }: WorkAcc
           </QueueState>
         </section>}
         {canFloat && <section className={workPanel} aria-label="Warehouse router float">
-          <h3 className="mb-2 flex items-center gap-2 font-display font-semibold text-ink"><Boxes className="h-4 w-4 text-emerald-600" aria-hidden="true" /> Warehouse · Router float</h3>
+          <h2 className="mb-3 flex items-center gap-3 font-display text-lg font-semibold text-ink">
+            <WorkIcon icon={Boxes} tone="violet" /> Warehouse · Router float
+          </h2>
           <QueueState load={routers}>
             <Link className="text-sm font-medium text-emerald-600 hover:underline" to="?focus=router-handover">
               {focusQueues.find((queue) => queue.key === 'router-handover')?.rows.length ?? 0} pickups yesterday still in float
@@ -176,6 +185,6 @@ export function DirectorWorkDashboard({ scope, canOpen, hasPermission }: WorkAcc
         </section>}
       </div>
     </div>
-    {queues.length > 0 && <h3 className="-mb-2 font-display text-base font-semibold text-ink">Needs attention now</h3>}
+    {queues.length > 0 && <h2 className="-mb-2 font-display text-lg font-semibold text-ink">Needs attention now</h2>}
   </WorkDashboard>
 }

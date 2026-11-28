@@ -112,7 +112,7 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
         empty: 'No clock-ins recorded today.', href: registerLink(today),
       },
       {
-        key: 'late', title: 'Late arrivals', context: 'Today', load: register, priority: true,
+        key: 'late', title: 'Late arrivals', context: 'Today', load: register, priority: 'warning',
         accent: { icon: ClockAlert, tone: 'amber' },
         rows: todayRows.filter((row) => row.clock_in_at && row.punctuality === 'late').map((row) =>
           attendanceRow(row, formatTimeInZone(row.clock_in_at, row.timezone))),
@@ -122,7 +122,7 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
     const missed: WorkQueue = {
       key: 'missed-clock-outs', title: 'Missed clock-outs', context: 'Yesterday · ' + dayLabel(yesterday),
       accent: { icon: ClockAlert, tone: 'amber' },
-      load: register, priority: true, href: registerLink(yesterday, undefined, 'missing_clock_out'),
+      load: register, priority: 'warning', href: registerLink(yesterday, undefined, 'missing_clock_out'),
       rows: rows.filter((row) => row.local_date === yesterday && row.effective_state === 'missing_clock_out')
         .map((row) => attendanceRow(row, row.clock_in_at ? 'In at ' + formatTimeInZone(row.clock_in_at, row.timezone) : undefined)),
       empty: 'No missed clock-outs recorded yesterday.',

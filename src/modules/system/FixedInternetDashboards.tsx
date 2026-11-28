@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowUpRight, CheckCircle2, FilePlus2, Router } from 'lucide-react'
+import {
+  AlertTriangle, ArrowUpRight, CheckCircle2, ClipboardCheck, ClipboardList, Clock, ClockAlert,
+  FilePenLine, FilePlus2, History, Inbox, Radio, Router, Send, UserRoundPlus, Wrench,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAttendanceTodayContext } from '@/modules/attendance/api/attendance'
 import { formatTimeInZone } from '@/modules/attendance/lib/zonedTime'
@@ -32,10 +35,10 @@ import {
 } from '@/modules/field-services/schemas/services'
 import { readMyRouterFloat, readRouterFloatOverview } from '@/modules/warehouse/router-float/routerFloatApi'
 
-import { workCardTones, workPanel as panel } from './WorkDashboardLayout'
+import { WorkIcon, type WorkAccent, workCardTones, workPanel as panel } from './WorkDashboardLayout'
 const liveRefreshMs = 30_000
 
-export type DashboardCardTone = 'default' | 'warning' | 'danger' | 'success'
+type DashboardCardTone = 'default' | 'warning' | 'danger' | 'success'
 
 function ActionCard({
   label,
@@ -43,6 +46,7 @@ function ActionCard({
   hint,
   path,
   tone = 'default',
+  accent,
   failed,
   onRetry,
 }: {
@@ -51,6 +55,7 @@ function ActionCard({
   hint?: string
   path: string
   tone?: DashboardCardTone
+  accent: WorkAccent
   failed?: boolean
   onRetry?: () => void
 }) {
@@ -63,10 +68,13 @@ function ActionCard({
         to={path}
         className="group flex items-start justify-between gap-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald"
       >
-        <div className="min-w-0">
-          <h2 className="break-words text-base font-medium text-ink">{label}</h2>
-          <p className="mt-1 font-display text-3xl font-semibold tabular-nums text-ink">{formatted}</p>
-          {hint && <p className="mt-1 text-sm text-soft">{hint}</p>}
+        <div className="flex min-w-0 items-start gap-3">
+          <WorkIcon {...accent} />
+          <div className="min-w-0">
+            <h2 className="break-words text-base font-medium text-ink">{label}</h2>
+            <p className="mt-1 font-display text-3xl font-semibold tabular-nums text-ink">{formatted}</p>
+            {hint && <p className="mt-1 text-sm text-soft">{hint}</p>}
+          </div>
         </div>
         <ArrowUpRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted group-hover:text-emerald" />
       </Link>
@@ -86,10 +94,15 @@ function YesterdayHandoff({ summary }: { summary: ServiceActivitySummary }) {
   const day = summary.yesterday
   return (
     <section aria-label="Yesterday’s handoff" className={panel}>
-      <h2 className="font-display text-sm font-semibold text-ink">Yesterday · {day.label}</h2>
-      <p className="mt-1 text-sm text-soft">
-        {day.submittedCount} sent to dispatch · {day.visitsCompletedCount} visits completed · {day.providerConfirmedCount} confirmed by provider
-      </p>
+      <div className="flex items-start gap-3">
+        <WorkIcon icon={History} tone="blue" />
+        <div>
+          <h2 className="font-display text-base font-semibold text-ink">Yesterday · {day.label}</h2>
+          <p className="mt-1 text-sm text-soft">
+            {day.submittedCount} sent to dispatch · {day.visitsCompletedCount} visits completed · {day.providerConfirmedCount} confirmed by provider
+          </p>
+        </div>
+      </div>
     </section>
   )
 }
@@ -122,9 +135,10 @@ export function ServiceDeskDashboard({
         <Link to="/services/intake/new" className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
           <FilePlus2 aria-hidden="true" className="h-4 w-4" /> Log a ticket
         </Link>} />
-      <section className={cn(panel, 'flex flex-wrap items-center justify-between gap-3')} aria-label="Live service queue">
-        <div className="flex items-center gap-2 text-sm font-semibold text-ink">
-          <span className={cn('h-2 w-2 rounded-full', overview.isError ? 'bg-amber' : 'bg-emerald')} aria-hidden="true" />
+      <section className={cn(panel, 'flex flex-wrap items-center justify-between gap-3', overview.isError
+        ? workCardTones.warning : 'border-emerald/25 bg-emerald-tint')} aria-label="Live service queue">
+        <div className="flex items-center gap-3 text-base font-medium text-ink">
+          <WorkIcon icon={Radio} tone={overview.isError ? 'amber' : 'teal'} />
           {overview.isError ? 'Queue update unavailable' : 'Today’s queue'}
         </div>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-soft">
@@ -132,9 +146,10 @@ export function ServiceDeskDashboard({
           <Link className="hover:underline" to="/services/intake?queue=ongoing"><strong className="text-ink">{inField ?? '—'}</strong> with the field team</Link>
         </div>
       </section>
-      <section aria-label="Service desk work overview" className="grid gap-3 sm:grid-cols-3">
+      <section aria-label="Service desk work overview" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <ActionCard
           label="Drafts to Submit"
+          accent={{ icon: FilePenLine, tone: "amber" }}
           value={queues?.draft_count}
           path="/services/intake?queue=draft"
           tone={(queues?.draft_count ?? 0) > 0 ? 'warning' : 'default'}
@@ -143,14 +158,16 @@ export function ServiceDeskDashboard({
         />
         <ActionCard
           label="Ready to Report to Provider"
+          accent={{ icon: Send, tone: "teal" }}
           value={queues?.coordinator_reviewed_count}
           path="/services/intake?queue=ready_to_report"
-          tone={(queues?.coordinator_reviewed_count ?? 0) > 0 ? 'warning' : 'default'}
+          tone={(queues?.coordinator_reviewed_count ?? 0) > 0 ? 'success' : 'default'}
           failed={overview.isError}
           onRetry={() => void overview.refetch()}
         />
         <ActionCard
           label="Awaiting Provider Confirmation"
+          accent={{ icon: Clock, tone: "blue" }}
           value={queues?.reported_to_provider_count}
           path="/services/intake?queue=reported_to_provider"
           failed={overview.isError}
@@ -161,8 +178,8 @@ export function ServiceDeskDashboard({
       <section aria-labelledby="desk-needs-attention" className={cn(panel, 'space-y-3')}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 id="desk-needs-attention" className="font-display text-lg font-semibold text-ink">
-              Needs your attention
+            <h2 id="desk-needs-attention" className="flex items-center gap-3 font-display text-lg font-semibold text-ink">
+              <WorkIcon icon={Inbox} tone="blue" /> Needs your attention
             </h2>
           </div>
         </div>
@@ -290,6 +307,7 @@ export function ServiceCoordinatorDashboard({
       <section aria-label="Dispatch and review overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <ActionCard
           label="Awaiting Assignment"
+          accent={{ icon: UserRoundPlus, tone: "blue" }}
           value={queues?.submitted_count}
           path="/services/dispatch?status=submitted"
           tone={(queues?.submitted_count ?? 0) > 0 ? 'warning' : 'default'}
@@ -298,6 +316,7 @@ export function ServiceCoordinatorDashboard({
         />
         <ActionCard
           label="Open Urgent Tickets"
+          accent={{ icon: AlertTriangle, tone: (queues?.open_urgent_tickets ?? 0) > 0 ? "rose" : "blue" }}
           value={queues?.open_urgent_tickets}
           path="/services/dispatch?urgent=1"
           tone={(queues?.open_urgent_tickets ?? 0) > 0 ? 'danger' : 'default'}
@@ -306,6 +325,7 @@ export function ServiceCoordinatorDashboard({
         />
         <ActionCard
           label="Overdue SLA"
+          accent={{ icon: ClockAlert, tone: (overdueCardValue ?? 0) > 0 ? "rose" : "blue" }}
           value={overdueCardValue}
           path={canMonitor ? '/services/monitor?bucket=overdue' : '/services/dispatch?overdue=1'}
           tone={(overdueCardValue ?? 0) > 0 ? 'danger' : 'default'}
@@ -314,6 +334,7 @@ export function ServiceCoordinatorDashboard({
         />
         <ActionCard
           label="Awaiting Review"
+          accent={{ icon: ClipboardCheck, tone: "violet" }}
           value={queues?.work_completed_count}
           path="/services/dispatch?status=work_completed"
           tone={(queues?.work_completed_count ?? 0) > 0 ? 'warning' : 'default'}
@@ -325,8 +346,8 @@ export function ServiceCoordinatorDashboard({
       <section aria-labelledby="coord-needs-attention" className={cn(panel, 'space-y-3')}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 id="coord-needs-attention" className="font-display text-lg font-semibold text-ink">
-              Needs attention now
+            <h2 id="coord-needs-attention" className="flex items-center gap-3 font-display text-lg font-semibold text-ink">
+              <WorkIcon icon={ClipboardList} tone="blue" /> Needs attention now
             </h2>
           </div>
           <Link to="/services/dispatch">
@@ -411,9 +432,9 @@ export function ServiceCoordinatorDashboard({
         <section aria-label="CPE Router Float oversight" className={panel}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <Router className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+              <WorkIcon icon={Router} tone={floatFaultyCount > 0 ? "rose" : "amber"} />
               <div>
-                <h2 className="font-display text-sm font-semibold text-ink">Router handover issues</h2>
+                <h2 className="font-display text-base font-semibold text-ink">Router handover issues</h2>
                 {routerFloat.data ? (
                   <p className="text-xs text-soft">
                     Pending pickup:{' '}
@@ -484,19 +505,22 @@ export function ServiceTechnicianDashboard({
   return (
     <div className="space-y-5">
       {canAttend && (
-        <section aria-label="Today’s shift" className={cn(panel, 'flex flex-wrap items-center justify-between gap-3')}>
-          <div>
-            <h2 className="font-display text-lg font-semibold text-ink">Today’s shift</h2>
-            <p className="mt-0.5 text-sm text-soft">
-              {shift.isError ? 'Attendance unavailable' : !shift.data ? 'Checking attendance…'
-                : !shift.data.enabled ? 'Live clock-ins are paused'
-                  : !shift.data.enrolled ? 'Attendance is not set up for your account'
-                    : shift.data.day?.clock_out_at ? 'Clocked out at ' + formatTimeInZone(shift.data.day.clock_out_at, shift.data.timezone)
-                      : shift.data.day?.clock_in_at ? 'Clocked in at ' + formatTimeInZone(shift.data.day.clock_in_at, shift.data.timezone)
-                        : shift.data.is_workday ? 'Ready to clock in' : 'No shift scheduled today'}
-            </p>
+        <section aria-label="Today’s shift" className={cn(panel, 'flex flex-wrap items-center justify-between gap-3 border-emerald/25 bg-emerald-tint')}>
+          <div className="flex items-center gap-3">
+            <WorkIcon icon={Clock} tone="teal" />
+            <div>
+              <h2 className="font-display text-lg font-semibold text-ink">Today’s shift</h2>
+              <p className="mt-0.5 text-sm text-soft">
+                {shift.isError ? 'Attendance unavailable' : !shift.data ? 'Checking attendance…'
+                  : !shift.data.enabled ? 'Live clock-ins are paused'
+                    : !shift.data.enrolled ? 'Attendance is not set up for your account'
+                      : shift.data.day?.clock_out_at ? 'Clocked out at ' + formatTimeInZone(shift.data.day.clock_out_at, shift.data.timezone)
+                        : shift.data.day?.clock_in_at ? 'Clocked in at ' + formatTimeInZone(shift.data.day.clock_in_at, shift.data.timezone)
+                          : shift.data.is_workday ? 'Ready to clock in' : 'No shift scheduled today'}
+              </p>
+            </div>
           </div>
-          <Link to="/my/attendance" className="rounded-lg border border-line px-3 py-2 text-sm font-medium hover:border-emerald">My Attendance</Link>
+          <Link to="/my/attendance" className="rounded-lg border border-emerald/30 bg-surface px-3 py-2 text-sm font-medium hover:border-emerald">My Attendance</Link>
         </section>
       )}
       {pendingCount > 0 && (
@@ -541,8 +565,8 @@ export function ServiceTechnicianDashboard({
       <section aria-labelledby="tech-active-jobs" className={cn(panel, 'space-y-3')}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 id="tech-active-jobs" className="font-display text-lg font-semibold text-ink">
-              My Active Service Jobs
+            <h2 id="tech-active-jobs" className="flex items-center gap-3 font-display text-lg font-semibold text-ink">
+              <WorkIcon icon={Wrench} tone="blue" /> My Active Service Jobs
             </h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -612,9 +636,10 @@ export function ServiceTechnicianDashboard({
         )}
       </section>
 
-      <section aria-label="Technician work overview" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <section aria-label="Technician work overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <ActionCard
           label="My Active Jobs"
+          accent={{ icon: Wrench, tone: "blue" }}
           value={activeCount}
           hint="Assigned, in-progress, or follow-up jobs"
           path="/services/my-jobs?section=active"
@@ -624,6 +649,7 @@ export function ServiceTechnicianDashboard({
         />
         <ActionCard
           label="Awaiting Review"
+          accent={{ icon: ClipboardCheck, tone: "violet" }}
           value={awaitingReviewCount}
           hint="Completed visits awaiting review or sign-off"
           path="/services/my-jobs?section=awaiting_review"
@@ -634,6 +660,7 @@ export function ServiceTechnicianDashboard({
           <>
             <ActionCard
               label="Ready to Install"
+              accent={{ icon: Router, tone: "teal" }}
               value={floatData?.confirmed_count}
               hint="Confirmed CPE routers in your bag"
               path="/services/my-float"
@@ -642,6 +669,7 @@ export function ServiceTechnicianDashboard({
             />
             <ActionCard
               label="Float Used"
+              accent={{ icon: Router, tone: faultyCount > 0 ? "rose" : pendingCount > 0 ? "amber" : "blue" }}
               value={floatData ? `${floatData.active_total} / ${floatData.cap}` : undefined}
               hint={
                 floatData

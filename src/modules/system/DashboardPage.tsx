@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowUpRight } from 'lucide-react'
+import { AlertTriangle, ArrowUpRight, Bell, Boxes, Building2, Inbox, UserRoundPlus, Users, Wrench } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useEffect, useState, type ComponentType } from 'react'
 
 import { PageHeader } from '@/components/patterns/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { StatusPill } from '@/components/ui/StatusPill'
-import { isItemPermitted, NAV_ITEMS } from '@/config/navigation'
+import type { UserRole } from '@/config/modules'
+import { isItemPermitted, NAV_ITEMS, type NavItem } from '@/config/navigation'
+import { cn } from '@/lib/utils'
 import { useProtectedIdentityScope } from '@/lib/idempotency/pendingOperations'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { getTodayIsoInZone } from '@/modules/attendance/lib/zonedTime'
@@ -27,7 +29,7 @@ import { WarehouseWorkDashboard } from './WarehouseWorkDashboard'
 import type { WorkAccess } from './useWorkRead'
 import { systemSessionGuard } from './systemSession'
 import { workTimezone } from './workDashboardData'
-import { workPanel as panel } from './WorkDashboardLayout'
+import { WorkIcon, type WorkAccent, workAccents, workCardTones, workPanel as panel } from './WorkDashboardLayout'
 
 const shortcuts = [
   'service-my-jobs', 'my-router-float', 'service-intake', 'service-dispatch', 'service-monitor',
@@ -35,6 +37,22 @@ const shortcuts = [
   'employees', 'reports', 'users', 'settings', 'audit',
   'my-attendance', 'my', 'my-leave', 'my-equipment',
 ]
+const roleShortcuts: Partial<Record<UserRole, string[]>> = {
+  cfo: ['payroll', 'advances', 'reimbursements', 'cash'],
+  project_manager: ['projects', 'cash', 'requests'],
+  super_admin: ['users', 'audit', 'settings'],
+  employee: ['my-attendance', 'my-leave', 'my-payslips', 'my'],
+}
+const shortcutTones: Partial<Record<NavItem['section'], WorkAccent['tone']>> = {
+  'Service Ops': 'blue',
+  Operations: 'blue',
+  Inventory: 'teal',
+  Custody: 'teal',
+  Finance: 'violet',
+  System: 'blue',
+  People: 'violet',
+  'My Self-Service': 'teal',
+}
 const roleDashboards: Partial<Record<string, ComponentType<WorkAccess>>> = {
   managing_director: DirectorWorkDashboard,
   hr_admin: HrWorkDashboard,
@@ -76,19 +94,25 @@ type Metric = {
   label: string
   value?: number
   path: string
+  accent: WorkAccent
+  attention?: 'warning' | 'danger'
   failed: boolean
   retry: () => void
 }
 
-function MetricCard({ label, value, path, failed, retry }: Metric) {
+function MetricCard({ label, value, path, accent, attention, failed, retry }: Metric) {
   return (
-    <article className={panel}>
+    <article className={cn(panel, workAccents[accent.tone].surface,
+      attention && (value ?? 0) > 0 && workCardTones[attention])}>
       <Link to={path} className="group flex items-start justify-between gap-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald">
-        <div>
-          <h2 className="text-base font-medium text-ink">{label}</h2>
-          <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink">
-            {value === undefined ? '—' : value.toLocaleString('en-UG')}
-          </p>
+        <div className="flex min-w-0 items-start gap-3">
+          <WorkIcon {...accent} />
+          <div className="min-w-0">
+            <h2 className="text-base font-medium text-ink">{label}</h2>
+            <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink">
+              {value === undefined ? '—' : value.toLocaleString('en-UG')}
+            </p>
+          </div>
         </div>
         <ArrowUpRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted group-hover:text-emerald" />
       </Link>
@@ -109,7 +133,9 @@ function RecentNotifications() {
   }
   return (
     <section aria-labelledby="recent-notifications" className={panel}>
-      <h2 id="recent-notifications" className="font-display font-semibold">Unread notifications</h2>
+      <h2 id="recent-notifications" className="flex items-center gap-3 font-display text-lg font-semibold">
+        <WorkIcon icon={Bell} tone="blue" /> Unread notifications
+      </h2>
       {feed.isError && <div role="alert" className="mt-3 flex items-center gap-2 text-sm text-soft">
         <span>Could not load notifications.</span>
         <Button size="sm" variant="outline" onClick={() => void feed.refetch()}>Retry</Button>
@@ -147,10 +173,12 @@ export default function DashboardPage() {
   const scope = useProtectedIdentityScope(auth)
   const { roleKeys, permissionKeys, hasPermission } = getEffectiveServiceAccess(auth)
   const permitted = NAV_ITEMS.filter((item) => isItemPermitted(item, permissionKeys, roleKeys))
-  const actions = shortcuts.flatMap((key) => permitted.find((item) => item.key === key) ?? [])
   const canOpen = (key: string) => permitted.some((item) => item.key === key)
   const live = scope.isAuthReady && !(import.meta.env.DEV && auth.devPreviewRole)
   const primaryRole = roleKeys.find((role) => role !== 'employee') ?? roleKeys[0]
+  const preferredActions = primaryRole ? roleShortcuts[primaryRole] ?? [] : []
+  const actions = [...new Set([...preferredActions, ...shortcuts])]
+    .flatMap((key) => permitted.find((item) => item.key === key) ?? [])
   const canReadService = hasPermission('service_requests.read')
   const canMonitor = canOpen('service-monitor')
   const canDispatchOrReview =
@@ -212,26 +240,26 @@ export default function DashboardPage() {
   const metrics: Metric[] = []
   if (live && canMonitor) {
     metrics.push(
-      { label: 'Service jobs awaiting assignment', value: monitor.data?.unassigned_count, path: '/services/monitor', failed: monitor.isError, retry: () => void monitor.refetch() },
-      { label: 'Open urgent flags', value: monitor.data?.open_urgent_flags_count, path: '/services/monitor', failed: monitor.isError, retry: () => void monitor.refetch() },
+      { label: 'Service jobs awaiting assignment', accent: { icon: UserRoundPlus, tone: 'blue' }, attention: 'warning', value: monitor.data?.unassigned_count, path: '/services/monitor', failed: monitor.isError, retry: () => void monitor.refetch() },
+      { label: 'Open urgent flags', accent: { icon: AlertTriangle, tone: 'blue' }, attention: 'danger', value: monitor.data?.open_urgent_flags_count, path: '/services/monitor', failed: monitor.isError, retry: () => void monitor.refetch() },
     )
   }
   if (live && needsOverview) metrics.push({
-    label: 'Tickets needing intake attention', value: overview.data?.queues.intake_attention_count, path: canOpen('service-intake') ? '/services/intake' : '/services/dispatch',
+    label: 'Tickets needing intake attention', accent: { icon: Inbox, tone: 'blue' }, attention: 'warning', value: overview.data?.queues.intake_attention_count, path: canOpen('service-intake') ? '/services/intake' : '/services/dispatch',
     failed: overview.isError, retry: () => void overview.refetch(),
   })
   if (live && canReadJobs) metrics.push({
-    label: 'My active service jobs', value: jobs.data?.active_count, path: '/services/my-jobs', failed: jobs.isError, retry: () => void jobs.refetch(),
+    label: 'My active service jobs', accent: { icon: Wrench, tone: 'teal' }, value: jobs.data?.active_count, path: '/services/my-jobs', failed: jobs.isError, retry: () => void jobs.refetch(),
   })
   if (live && canOpen('projects')) metrics.push({
-    label: 'Active projects', value: projects.data, path: '/ops/projects', failed: projects.isError, retry: () => void projects.refetch(),
+    label: 'Active projects', accent: { icon: Building2, tone: 'blue' }, value: projects.data, path: '/ops/projects', failed: projects.isError, retry: () => void projects.refetch(),
   })
   if (live && canOpen('inventory') && canOpen('requests')) metrics.push({
-    label: 'Stock requests awaiting approval', value: inventory.data?.requestsPendingApproval, path: '/inventory/requests',
+    label: 'Stock requests awaiting approval', accent: { icon: Boxes, tone: 'teal' }, attention: 'warning', value: inventory.data?.requestsPendingApproval, path: '/inventory/requests',
     failed: inventory.isError, retry: () => void inventory.refetch(),
   })
   if (live && canOpen('employees')) metrics.push({
-    label: 'Employee records', value: employees.data, path: '/people/employees', failed: employees.isError, retry: () => void employees.refetch(),
+    label: 'Employee records', accent: { icon: Users, tone: 'violet' }, value: employees.data, path: '/people/employees', failed: employees.isError, retry: () => void employees.refetch(),
   })
 
   return (
@@ -268,11 +296,11 @@ export default function DashboardPage() {
             {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
           </section>}
           <section aria-labelledby="dashboard-actions" className="space-y-3">
-            <h2 id="dashboard-actions" className="font-display font-semibold">Quick actions</h2>
+            <h2 id="dashboard-actions" className="font-display text-lg font-semibold">Quick actions</h2>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {actions.map((item) => (
                 <Link key={item.key} to={item.path} className="group flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-base font-medium hover:border-emerald hover:text-emerald-600">
-                  <item.icon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted" />
+                  <WorkIcon icon={item.icon} tone={shortcutTones[item.section] ?? "teal"} className="size-9" />
                   {item.label}
                   <ArrowUpRight aria-hidden="true" className="ml-auto h-4 w-4 shrink-0 text-muted group-hover:text-emerald" />
                 </Link>

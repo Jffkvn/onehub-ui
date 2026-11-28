@@ -5,7 +5,11 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  ClockAlert,
+  ClipboardCheck,
   ExternalLink,
+  Inbox,
+  ListChecks,
   RefreshCw,
   ShieldCheck,
   WifiOff,
@@ -17,6 +21,7 @@ import { EmptyState } from '@/components/patterns/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils'
+import { WorkIcon, type WorkAccent, workCardTones } from '@/modules/system/WorkDashboardLayout'
 import {
   SERVICE_MONITOR_BUCKETS,
   SERVICE_URGENT_REASON_LABELS,
@@ -219,16 +224,17 @@ export function ServiceMonitorPage() {
     key: ServiceMonitorBucket
     label: string
     value: number | null
-    accent: string
+    accent: WorkAccent
+    attention?: 'warning' | 'danger'
   }> = [
-    { key: 'urgent', label: 'Open Urgent Flags', value: snapshot?.open_urgent_flags_count ?? null, accent: 'text-rose' },
-    { key: 'acknowledged', label: 'Acknowledged Urgent Alerts', value: snapshot?.acknowledged_urgent_flags_count ?? null, accent: 'text-amber' },
-    { key: 'unassigned', label: 'Unassigned', value: snapshot?.unassigned_count ?? null, accent: 'text-ink' },
-    { key: 'ongoing', label: 'Assigned / In Progress', value: ongoingCount, accent: 'text-emerald-600' },
-    { key: 'follow_up', label: 'Follow-Up Required', value: snapshot?.follow_up_count ?? null, accent: 'text-amber' },
-    { key: 'review', label: 'Coordinator Review Pending', value: snapshot?.review_pending_count ?? null, accent: 'text-ink' },
-    { key: 'overdue', label: 'Overdue SLA', value: snapshot?.overdue_count ?? null, accent: 'text-rose' },
-    { key: 'all', label: 'All Active Queue', value: activeTotalCount, accent: 'text-ink' },
+    { key: 'urgent', label: 'Open Urgent Flags', value: snapshot?.open_urgent_flags_count ?? null, accent: { icon: AlertTriangle, tone: 'blue' }, attention: 'danger' },
+    { key: 'acknowledged', label: 'Acknowledged Urgent Alerts', value: snapshot?.acknowledged_urgent_flags_count ?? null, accent: { icon: ShieldCheck, tone: 'amber' } },
+    { key: 'unassigned', label: 'Unassigned', value: snapshot?.unassigned_count ?? null, accent: { icon: Inbox, tone: 'blue' } },
+    { key: 'ongoing', label: 'Assigned / In Progress', value: ongoingCount, accent: { icon: Activity, tone: 'teal' } },
+    { key: 'follow_up', label: 'Follow-Up Required', value: snapshot?.follow_up_count ?? null, accent: { icon: Clock, tone: 'amber' }, attention: 'warning' },
+    { key: 'review', label: 'Coordinator Review Pending', value: snapshot?.review_pending_count ?? null, accent: { icon: ClipboardCheck, tone: 'violet' } },
+    { key: 'overdue', label: 'Overdue SLA', value: snapshot?.overdue_count ?? null, accent: { icon: ClockAlert, tone: 'blue' }, attention: 'danger' },
+    { key: 'all', label: 'All Active Queue', value: activeTotalCount, accent: { icon: ListChecks, tone: 'teal' } },
   ]
 
   const rows = queue?.rows ?? []
@@ -351,7 +357,7 @@ export function ServiceMonitorPage() {
       {/* Per-Section KPI Summary Header & Grid */}
       <div className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-          <span className="font-semibold uppercase tracking-wide">Queue Summary Counts</span>
+          <h2 className="font-display text-base font-semibold text-ink">Queue summary</h2>
           <span
             data-testid="monitor-snapshot-freshness"
             className="inline-flex items-center gap-1.5"
@@ -371,6 +377,7 @@ export function ServiceMonitorPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {kpiBuckets.map((card) => {
             const isSelected = bucket === card.key
+            const attention = (card.value ?? 0) > 0 ? card.attention : undefined
             return (
               <button
                 key={card.key}
@@ -378,22 +385,18 @@ export function ServiceMonitorPage() {
                 onClick={() => selectBucket(card.key)}
                 aria-pressed={isSelected}
                 className={cn(
-                  'rounded-lg border p-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald',
-                  isSelected
-                    ? 'border-emerald bg-emerald-tint/20 shadow-xs'
-                    : 'border-line bg-surface hover:border-emerald/60',
+                  'flex flex-col justify-between gap-2 rounded-lg border border-line bg-surface p-3.5 text-left transition-colors hover:border-emerald/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald',
+                  attention && workCardTones[attention],
+                  isSelected && 'border-emerald ring-1 ring-emerald',
                 )}
               >
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-                  {card.label}
-                </p>
-                <p className={cn('mt-1 font-display text-2xl font-bold tabular-nums', card.accent)}>
-                  {snapshotQuery.isLoading && !hasSnapshot
-                    ? '…'
-                    : card.value !== null
-                      ? card.value
-                      : '—'}
-                </p>
+                <p className="text-sm font-medium text-ink">{card.label}</p>
+                <div className="flex items-center gap-2">
+                  <WorkIcon {...card.accent} tone={attention === 'danger' ? 'rose' : card.accent.tone} className="size-8" />
+                  <p className="font-display text-2xl font-semibold tabular-nums text-ink">
+                    {snapshotQuery.isLoading && !hasSnapshot ? '…' : card.value ?? '—'}
+                  </p>
+                </div>
               </button>
             )
           })}

@@ -1,5 +1,5 @@
-import { ArrowLeft, ArrowUpRight, ChevronRight, type LucideIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { ArrowLeft, ArrowUpRight, ChevronRight } from 'lucide-react'
+import type { ComponentType, ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/patterns/PageHeader'
@@ -8,12 +8,12 @@ import { cn } from '@/lib/utils'
 export const workPanel = 'min-w-0 rounded-xl border border-line bg-surface p-4 sm:p-5'
 
 export const workCardTones = {
-  warning: 'border-amber/40 bg-amber-tint/70',
-  danger: 'border-rose/40 bg-rose-tint/70',
+  warning: 'border-amber/50 bg-amber-tint',
+  danger: 'border-rose/50 bg-rose-tint',
   success: 'border-emerald/40 bg-emerald-tint/70',
 }
 
-const queueAccents = {
+export const workAccents = {
   teal: {
     surface: 'border-emerald/30 bg-emerald-tint',
     icon: 'bg-emerald/20 text-emerald-800 dark:text-emerald-300',
@@ -30,14 +30,21 @@ const queueAccents = {
     surface: 'border-violet/30 bg-violet-tint',
     icon: 'bg-violet/15 text-violet-800 dark:text-violet-300',
   },
+  rose: {
+    surface: 'border-rose/30 bg-rose-tint',
+    icon: 'bg-rose/15 text-rose-800 dark:text-rose-300',
+  },
 }
 
-type QueueAccent = { icon: LucideIcon; tone: keyof typeof queueAccents }
+export type WorkAccent = {
+  icon: ComponentType<{ className?: string }>
+  tone: keyof typeof workAccents
+}
 
-function QueueIcon({ icon: Icon, tone }: QueueAccent) {
+export function WorkIcon({ icon: Icon, tone, className }: WorkAccent & { className?: string }) {
   return (
-    <span className={cn('grid size-10 shrink-0 place-items-center rounded-lg', queueAccents[tone].icon)}>
-      <Icon className="size-5" aria-hidden="true" />
+    <span aria-hidden="true" className={cn('grid size-10 shrink-0 place-items-center rounded-lg', workAccents[tone].icon, className)}>
+      <Icon className="size-5" />
     </span>
   )
 }
@@ -63,8 +70,8 @@ export type WorkQueue = {
   empty: string
   rows: WorkRow[]
   load: WorkLoad
-  priority?: boolean
-  accent?: QueueAccent
+  priority?: 'warning' | 'danger'
+  accent?: WorkAccent
   href?: string
 }
 
@@ -88,10 +95,10 @@ export function QueuePanel({ queue, limit, embedded = false }: {
   return (
     <section className={embedded ? 'min-w-0' : workPanel} aria-label={queue.title}>
       <div className={cn('mb-3 flex flex-wrap justify-between gap-2', queue.accent
-        ? cn('items-center rounded-lg px-3 py-2.5', queueAccents[queue.accent.tone].surface)
+        ? cn('items-center rounded-lg px-3 py-2.5', workAccents[queue.accent.tone].surface)
         : 'items-baseline')}>
         <div className="flex min-w-0 items-center gap-3">
-          {queue.accent && <QueueIcon {...queue.accent} />}
+          {queue.accent && <WorkIcon {...queue.accent} />}
           <div className="min-w-0">
             <h2 className="font-display text-lg font-semibold text-ink">{queue.title}</h2>
             <p className="text-sm text-soft">{queue.context}</p>
@@ -153,10 +160,10 @@ export function WorkDashboard({
       {queues.map((queue) => (
         <Link key={queue.key} to={'?focus=' + queue.key}
           className={cn(workPanel, 'group flex items-start justify-between gap-2 hover:border-emerald focus-visible:outline focus-visible:outline-emerald',
-            queue.accent && queueAccents[queue.accent.tone].surface,
-            queue.priority && queue.rows.length > 0 && !queue.load.isPending && !queue.load.isError && workCardTones.warning)}>
+            queue.accent && workAccents[queue.accent.tone].surface,
+            queue.priority && queue.rows.length > 0 && !queue.load.isPending && !queue.load.isError && workCardTones[queue.priority])}>
           <div className="flex min-w-0 items-start gap-3">
-            {queue.accent && <QueueIcon {...queue.accent} />}
+            {queue.accent && <WorkIcon {...queue.accent} />}
             <div className="min-w-0">
               <p className="break-words text-base font-medium text-ink">{queue.title}</p>
               <p className="mt-1 font-display text-3xl font-semibold tabular-nums text-ink">

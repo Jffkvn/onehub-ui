@@ -1,3 +1,4 @@
+import { Boxes, Building2, ClipboardList, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { getTodayIsoInZone } from '@/modules/attendance/lib/zonedTime'
@@ -54,6 +55,7 @@ export function TowerWorkDashboard({ scope, canOpen, hasPermission }: WorkAccess
   const queues: WorkQueue[] = []
   if (canOpen('projects')) queues.push({
     key: 'assigned-projects', title: 'Assigned projects', context: 'Planned, active or on hold', load: projects,
+    accent: { icon: Building2, tone: 'blue' },
     rows: assigned.map((entry) => ({
       id: entry.project_id, title: entry.projects.name,
       detail: { active: 'Active', planned: 'Planned', on_hold: 'On hold' }[entry.projects.status],
@@ -62,7 +64,8 @@ export function TowerWorkDashboard({ scope, canOpen, hasPermission }: WorkAccess
     empty: 'You have no current construction projects assigned.',
   })
   if (canOpen('projects') && canReport) queues.push({
-    key: 'updates-due', title: 'Daily updates due', context: 'Today and yesterday', priority: true,
+    key: 'updates-due', title: 'Daily updates due', context: 'Today and yesterday', priority: 'warning',
+    accent: { icon: ClipboardList, tone: 'amber' },
     load: {
       isPending: projects.isPending || updates.isPending, isError: projects.isError || updates.isError,
       refetch: () => Promise.all([projects.refetch(), updates.refetch()]),
@@ -81,6 +84,7 @@ export function TowerWorkDashboard({ scope, canOpen, hasPermission }: WorkAccess
   })
   if (canOpen('requests')) queues.push({
     key: 'open-stock', title: 'Open stock requests', context: 'Waiting for approval or issue', load: stock,
+    accent: { icon: Boxes, tone: 'teal' },
     rows: (stock.data ?? []).filter((row) => row.status === 'pending_approval' || row.status === 'approved').map((row) => ({
       id: row.id, title: row.project_name,
       detail: row.status === 'approved' ? 'Approved. Waiting for issue' : 'Awaiting approval',
@@ -89,7 +93,8 @@ export function TowerWorkDashboard({ scope, canOpen, hasPermission }: WorkAccess
     empty: 'You have no project stock requests awaiting approval or issue.',
   })
   if (canOpen('cash')) queues.push({
-    key: 'cash-to-account', title: 'Project cash to account for', context: 'Disbursed cash with a balance', load: cash, priority: true,
+    key: 'cash-to-account', title: 'Project cash to account for', context: 'Disbursed cash with a balance', load: cash,
+    accent: { icon: Wallet, tone: 'violet' },
     rows: (cash.data ?? []).filter(({ balance }) => balance > 0).map(({ row, balance }) => ({
       id: row.id, title: row.projects?.name ?? row.purpose,
       detail: 'UGX ' + balance.toLocaleString('en-UG') + ' outstanding · ' + row.purpose,

@@ -1,3 +1,4 @@
+import { ClipboardList, PackageMinus, RotateCcw, Router } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getTodayIsoInZone } from '@/modules/attendance/lib/zonedTime'
 import { catalogPageSize, readConsumables } from '@/modules/warehouse/catalog/catalogApi'
@@ -35,7 +36,8 @@ export function WarehouseWorkDashboard({ scope, canOpen, hasPermission }: WorkAc
   const queues: WorkQueue[] = []
 
   if (canRequests || canEquipment) queues.push({
-    key: 'pending-requests', title: 'Pending requests', context: 'Review or prepare for issue', priority: true, load: requests,
+    key: 'pending-requests', title: 'Pending requests', context: 'Review or prepare for issue', load: requests,
+    accent: { icon: ClipboardList, tone: 'blue' },
     rows: [
       ...(requests.data?.stock ?? []).filter((row) => row.status === 'pending_approval' || row.status === 'approved')
         .map((row) => ({
@@ -55,7 +57,8 @@ export function WarehouseWorkDashboard({ scope, canOpen, hasPermission }: WorkAc
     empty: 'No stock or equipment requests are waiting.',
   })
   if (canReturns) queues.push({
-    key: 'returns-due', title: 'Returns due', context: 'Due today or overdue', priority: true, load: returns,
+    key: 'returns-due', title: 'Returns due', context: 'Due today or overdue', priority: 'warning', load: returns,
+    accent: { icon: RotateCcw, tone: 'amber' },
     href: '/custody/returns?due=due',
     rows: (returns.data ?? []).filter((row) => row.expected_return_date !== null && row.expected_return_date <= today)
       .sort((a, b) => (a.expected_return_date ?? '').localeCompare(b.expected_return_date ?? '')).map((row) => ({
@@ -69,7 +72,8 @@ export function WarehouseWorkDashboard({ scope, canOpen, hasPermission }: WorkAc
     empty: 'No equipment returns are due.',
   })
   if (canStock) queues.push({
-    key: 'running-low', title: 'Running low', context: 'At or below reorder level', priority: true, load: stock,
+    key: 'running-low', title: 'Running low', context: 'At or below reorder level', priority: 'warning', load: stock,
+    accent: { icon: PackageMinus, tone: 'violet' },
     rows: (stock.data ?? []).filter(runningLow)
       .sort((a, b) => a.balance - a.reorder_level - (b.balance - b.reorder_level))
       .map((row) => ({
@@ -81,6 +85,7 @@ export function WarehouseWorkDashboard({ scope, canOpen, hasPermission }: WorkAc
   })
   if (canFloat) queues.push({
     key: 'router-pickup', title: 'Router pickups', context: 'Waiting for technician confirmation', load: routers,
+    accent: { icon: Router, tone: 'teal' },
     rows: (routers.data?.active_float ?? []).filter((row) => row.float_state === 'pending_handover').map((row) => ({
       id: row.custody_id, title: 'CPE Router (' + row.model_name + ')',
       detail: row.custodian_name + ' · ' + row.serial_number,
