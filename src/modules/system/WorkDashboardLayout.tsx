@@ -7,6 +7,12 @@ import { cn } from '@/lib/utils'
 
 export const workPanel = 'min-w-0 rounded-xl border border-line bg-surface p-4 sm:p-5'
 
+export const workCardTones = {
+  warning: 'border-amber/40 bg-amber-tint/70',
+  danger: 'border-rose/40 bg-rose-tint/70',
+  success: 'border-emerald/40 bg-emerald-tint/70',
+}
+
 export type WorkRow = {
   id: string
   title: string
@@ -53,11 +59,11 @@ export function QueuePanel({ queue, limit, embedded = false }: {
     <section className={embedded ? 'min-w-0' : workPanel} aria-label={queue.title}>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h2 className="font-display text-base font-semibold text-ink">{queue.title}</h2>
-          <p className="text-xs text-muted">{queue.context}</p>
+          <h2 className="font-display text-lg font-semibold text-ink">{queue.title}</h2>
+          <p className="text-sm text-soft">{queue.context}</p>
         </div>
         {!queue.load.isPending && !queue.load.isError && limit !== undefined && queue.rows.length > 0 && (
-          <Link className="text-sm font-medium text-emerald-600 hover:underline" to={'?focus=' + queue.key}>
+          <Link className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-300" to={'?focus=' + queue.key}>
             {queue.rows.length > limit ? `View all ${queue.rows.length}` : `Open queue (${queue.rows.length})`}
           </Link>
         )}
@@ -68,11 +74,11 @@ export function QueuePanel({ queue, limit, embedded = false }: {
             {visibleRows.map((row) => (
               <li key={row.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5">
                 <div className="min-w-0">
-                  <p className="break-words text-sm font-medium text-ink">{row.title}</p>
-                  {row.detail && <div className="mt-0.5 text-xs text-soft">{row.detail}</div>}
+                  <p className="break-words text-base font-medium text-ink">{row.title}</p>
+                  {row.detail && <div className="mt-0.5 text-sm text-soft">{row.detail}</div>}
                 </div>
                 {row.href && <Link aria-label={(row.action ?? 'Open') + ' ' + row.title}
-                  to={row.href} className="inline-flex items-center gap-1 rounded px-1 py-1 text-sm font-medium text-emerald-600 hover:underline">
+                  to={row.href} className="inline-flex items-center gap-1 rounded px-1 py-1 text-sm font-medium text-teal-700 hover:underline dark:text-teal-300">
                   {row.action ?? 'Open'} <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
                 </Link>}
               </li>
@@ -80,7 +86,7 @@ export function QueuePanel({ queue, limit, embedded = false }: {
           </ul>
         ) : <p className="py-2 text-sm text-soft">{queue.empty}</p>}
       </QueueState>
-      {queue.href && <Link className="mt-3 inline-block text-sm font-medium text-emerald-600 hover:underline" to={queue.href}>Open workspace</Link>}
+      {queue.href && <Link className="mt-3 inline-block text-sm font-medium text-teal-700 hover:underline dark:text-teal-300" to={queue.href}>Open workspace</Link>}
     </section>
   )
 }
@@ -89,7 +95,7 @@ export function WorkDashboard({
   title, description, queues, children, action, overviewQueues = [], queuesAfterContent = false,
 }: {
   title: string
-  description: string
+  description?: string
   queues: WorkQueue[]
   children?: ReactNode
   action?: ReactNode
@@ -100,7 +106,7 @@ export function WorkDashboard({
   const focused = [...queues, ...overviewQueues].find((queue) => queue.key === params.get('focus'))
   if (focused) return (
     <div className="space-y-4">
-      <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:underline">
+      <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-teal-700 hover:underline dark:text-teal-300">
         <ArrowLeft aria-hidden="true" className="h-4 w-4" /> Back to dashboard
       </Link>
       <QueuePanel queue={focused} />
@@ -112,13 +118,13 @@ export function WorkDashboard({
       {queues.map((queue) => (
         <Link key={queue.key} to={'?focus=' + queue.key}
           className={cn(workPanel, 'group flex items-start justify-between gap-2 hover:border-emerald focus-visible:outline focus-visible:outline-emerald',
-            queue.priority && queue.rows.length > 0 && !queue.load.isError && 'border-amber/60')}>
-          <div>
-            <p className="text-sm font-medium text-soft">{queue.title}</p>
+            queue.priority && queue.rows.length > 0 && !queue.load.isPending && !queue.load.isError && workCardTones.warning)}>
+          <div className="min-w-0">
+            <p className="break-words text-base font-medium text-ink">{queue.title}</p>
             <p className="mt-1 font-display text-3xl font-semibold tabular-nums text-ink">
               {queue.load.isPending || queue.load.isError ? '—' : queue.rows.length.toLocaleString('en-UG')}
             </p>
-            <p className="mt-0.5 text-xs text-muted">{queue.context}</p>
+            <p className="mt-0.5 text-sm text-soft">{queue.context}</p>
           </div>
           <ArrowUpRight className="h-4 w-4 shrink-0 text-muted group-hover:text-emerald" aria-hidden="true" />
         </Link>
@@ -127,7 +133,7 @@ export function WorkDashboard({
   )
   return (
     <div className="space-y-5">
-      <PageHeader title={title} subtitle={description} actions={action} />
+      <PageHeader title={title} subtitle={description} actions={action} className="[&_h1]:sm:text-2xl" />
       {!queuesAfterContent && cards}
       {children}
       {queuesAfterContent && cards}

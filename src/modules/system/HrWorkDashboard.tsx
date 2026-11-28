@@ -191,9 +191,9 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
   }
 
   return (
-    <WorkDashboard title="People today" description={dayLabel(today) + ' · Kampala'}
+    <WorkDashboard title="People today"
       queues={queues} overviewQueues={followUps}
-      action={canOpen('reports') && <Link className="text-sm font-medium text-emerald-600 hover:underline" to="/system/reports">HR reports</Link>}>
+      action={canOpen('reports') && <Link className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-300" to="/system/reports">HR reports</Link>}>
       {canAttendance && !setup.isError && setup.data?.policy.enabled === false && (
         <p role="status" className="rounded-lg border border-line bg-surface px-4 py-3 text-sm text-soft">
           Live clock-ins are paused. The dashboard shows attendance already recorded.
@@ -218,7 +218,7 @@ export function HrWorkDashboard({ scope, canOpen }: WorkAccess) {
               {milestones.length > 0
                 ? <ul className="divide-y divide-line">{milestones.map((row) => <li key={row.id} className="py-2 text-sm">
                   <Link className="font-medium hover:underline" to={row.href ?? '/people/employees'}>{row.title}</Link>
-                  <p className="text-xs text-soft">{row.detail}</p>
+                  <p className="text-sm text-soft">{row.detail}</p>
                 </li>)}</ul>
                 : <p className="text-sm text-soft">No birthdays or work anniversaries this week.</p>}
             </QueueState>

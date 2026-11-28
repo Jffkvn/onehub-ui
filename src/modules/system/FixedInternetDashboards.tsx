@@ -32,17 +32,10 @@ import {
 } from '@/modules/field-services/schemas/services'
 import { readMyRouterFloat, readRouterFloatOverview } from '@/modules/warehouse/router-float/routerFloatApi'
 
-const panel = 'rounded-xl border border-line bg-surface p-4 sm:p-5'
+import { workCardTones, workPanel as panel } from './WorkDashboardLayout'
 const liveRefreshMs = 30_000
 
 export type DashboardCardTone = 'default' | 'warning' | 'danger' | 'success'
-
-const cardToneStyles: Record<DashboardCardTone, string> = {
-  default: 'border-line bg-surface',
-  warning: 'border-amber/40 bg-amber-tint/15',
-  danger: 'border-rose/40 bg-rose-tint/15',
-  success: 'border-emerald/40 bg-emerald-tint/15',
-}
 
 function ActionCard({
   label,
@@ -65,15 +58,15 @@ function ActionCard({
     value === undefined ? '—' : typeof value === 'number' ? value.toLocaleString('en-UG') : value
 
   return (
-    <article className={cn('rounded-xl border p-4 sm:p-5', cardToneStyles[tone])}>
+    <article className={cn(panel, tone !== 'default' && workCardTones[tone])}>
       <Link
         to={path}
         className="group flex items-start justify-between gap-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald"
       >
         <div className="min-w-0">
-          <h2 className="text-sm font-medium text-soft group-hover:text-ink">{label}</h2>
-          <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink">{formatted}</p>
-          {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
+          <h2 className="break-words text-base font-medium text-ink">{label}</h2>
+          <p className="mt-1 font-display text-3xl font-semibold tabular-nums text-ink">{formatted}</p>
+          {hint && <p className="mt-1 text-sm text-soft">{hint}</p>}
         </div>
         <ArrowUpRight aria-hidden="true" className="h-4 w-4 shrink-0 text-muted group-hover:text-emerald" />
       </Link>
@@ -125,7 +118,7 @@ export function ServiceDeskDashboard({
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Service desk" actions={canIntake &&
+      <PageHeader title="Service desk" className="[&_h1]:sm:text-2xl" actions={canIntake &&
         <Link to="/services/intake/new" className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
           <FilePlus2 aria-hidden="true" className="h-4 w-4" /> Log a ticket
         </Link>} />
@@ -168,7 +161,7 @@ export function ServiceDeskDashboard({
       <section aria-labelledby="desk-needs-attention" className={cn(panel, 'space-y-3')}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 id="desk-needs-attention" className="font-display font-semibold text-ink">
+            <h2 id="desk-needs-attention" className="font-display text-lg font-semibold text-ink">
               Needs your attention
             </h2>
           </div>
@@ -207,7 +200,7 @@ export function ServiceDeskDashboard({
                       <ServiceTypeBadge requestType={row.request_type} />
                       <ServiceStatusPill status={row.status} />
                     </div>
-                    <p className="truncate text-sm font-medium text-ink">
+                    <p className="break-words text-base font-medium text-ink">
                       {row.site_name} ({row.area_label}) — {row.provider_name} [{row.provider_reference}]
                     </p>
                   </div>
@@ -332,7 +325,7 @@ export function ServiceCoordinatorDashboard({
       <section aria-labelledby="coord-needs-attention" className={cn(panel, 'space-y-3')}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 id="coord-needs-attention" className="font-display font-semibold text-ink">
+            <h2 id="coord-needs-attention" className="font-display text-lg font-semibold text-ink">
               Needs attention now
             </h2>
           </div>
@@ -389,10 +382,10 @@ export function ServiceCoordinatorDashboard({
                         </StatusPill>
                       )}
                     </div>
-                    <p className="truncate text-sm font-medium text-ink">
+                    <p className="break-words text-base font-medium text-ink">
                       {row.site_name} ({row.area_label}) · {row.provider_name}
                     </p>
-                    <p className="text-xs text-muted">
+                    <p className="text-sm text-soft">
                       {row.lead_name ? `Lead: ${row.lead_name}` : 'Unassigned'}
                       {row.provider_deadline_at && (
                         <>
@@ -493,7 +486,7 @@ export function ServiceTechnicianDashboard({
       {canAttend && (
         <section aria-label="Today’s shift" className={cn(panel, 'flex flex-wrap items-center justify-between gap-3')}>
           <div>
-            <h2 className="font-display font-semibold text-ink">Today’s shift</h2>
+            <h2 className="font-display text-lg font-semibold text-ink">Today’s shift</h2>
             <p className="mt-0.5 text-sm text-soft">
               {shift.isError ? 'Attendance unavailable' : !shift.data ? 'Checking attendance…'
                 : !shift.data.enabled ? 'Live clock-ins are paused'
@@ -548,7 +541,7 @@ export function ServiceTechnicianDashboard({
       <section aria-labelledby="tech-active-jobs" className={cn(panel, 'space-y-3')}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 id="tech-active-jobs" className="font-display font-semibold text-ink">
+            <h2 id="tech-active-jobs" className="font-display text-lg font-semibold text-ink">
               My Active Service Jobs
             </h2>
           </div>
@@ -604,7 +597,7 @@ export function ServiceTechnicianDashboard({
                       </StatusPill>
                     )}
                   </div>
-                  <p className="truncate text-sm font-medium text-ink">
+                  <p className="break-words text-base font-medium text-ink">
                     {job.site_name} ({job.area_label}) · {job.provider_name}
                   </p>
                 </div>

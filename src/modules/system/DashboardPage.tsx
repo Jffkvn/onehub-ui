@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowUpRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import type { ComponentType } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
 
 import { PageHeader } from '@/components/patterns/PageHeader'
 import { Button } from '@/components/ui/Button'
@@ -9,6 +9,7 @@ import { StatusPill } from '@/components/ui/StatusPill'
 import { isItemPermitted, NAV_ITEMS } from '@/config/navigation'
 import { useProtectedIdentityScope } from '@/lib/idempotency/pendingOperations'
 import { getSupabaseClient } from '@/lib/supabase/client'
+import { getTodayIsoInZone } from '@/modules/attendance/lib/zonedTime'
 import { useAuth } from '@/modules/auth/AuthProvider'
 import { getEffectiveServiceAccess, useMyAssignedRequests, useServiceMonitorSnapshot, useServiceOverviewCounts } from '@/modules/field-services/api/services'
 import { isSafeNotificationPath, useMarkNotificationRead, useNotificationBellState, type NotificationItem } from '@/modules/notifications/api/notifications'
@@ -25,6 +26,8 @@ import { TowerWorkDashboard } from './TowerWorkDashboard'
 import { WarehouseWorkDashboard } from './WarehouseWorkDashboard'
 import type { WorkAccess } from './useWorkRead'
 import { systemSessionGuard } from './systemSession'
+import { workTimezone } from './workDashboardData'
+import { workPanel as panel } from './WorkDashboardLayout'
 
 const shortcuts = [
   'service-my-jobs', 'my-router-float', 'service-intake', 'service-dispatch', 'service-monitor',
@@ -38,7 +41,36 @@ const roleDashboards: Partial<Record<string, ComponentType<WorkAccess>>> = {
   coordinator: TowerWorkDashboard,
   warehouse_manager: WarehouseWorkDashboard,
 }
-const panel = 'rounded-xl border border-line bg-surface p-4 sm:p-5'
+const dashboardHour = new Intl.DateTimeFormat('en-UG', {
+  timeZone: workTimezone,
+  hour: 'numeric',
+  hourCycle: 'h23',
+})
+const dashboardDate = new Intl.DateTimeFormat('en-UG', {
+  timeZone: workTimezone,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+
+function DashboardWelcome({ name, now }: { name?: string; now: Date }) {
+  const firstName = name?.trim().split(/\s+/, 1)[0]
+  const hour = Number(dashboardHour.format(now))
+  const period = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'
+
+  return (
+    <header className="relative isolate overflow-hidden rounded-xl bg-teal-900 bg-gradient-to-br from-[#07554c] to-[#0d7967] px-5 py-4 text-white sm:px-6 sm:py-5">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-32 -z-10 size-64 rounded-full bg-white/5" />
+      <p className="break-words font-display text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">
+        {'Good ' + period + (firstName ? ', ' + firstName : '')}
+      </p>
+      <time dateTime={getTodayIsoInZone(workTimezone, now)} className="mt-1.5 block text-base text-teal-50">
+        {dashboardDate.format(now) + ' · Kampala'}
+      </time>
+    </header>
+  )
+}
 
 type Metric = {
   label: string
@@ -53,7 +85,7 @@ function MetricCard({ label, value, path, failed, retry }: Metric) {
     <article className={panel}>
       <Link to={path} className="group flex items-start justify-between gap-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald">
         <div>
-          <h2 className="text-sm font-medium text-soft group-hover:text-ink">{label}</h2>
+          <h2 className="text-base font-medium text-ink">{label}</h2>
           <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-ink">
             {value === undefined ? '—' : value.toLocaleString('en-UG')}
           </p>
@@ -107,6 +139,11 @@ function RecentNotifications() {
 
 export default function DashboardPage() {
   const auth = useAuth()
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
   const scope = useProtectedIdentityScope(auth)
   const { roleKeys, permissionKeys, hasPermission } = getEffectiveServiceAccess(auth)
   const permitted = NAV_ITEMS.filter((item) => isItemPermitted(item, permissionKeys, roleKeys))
@@ -198,8 +235,9 @@ export default function DashboardPage() {
   })
 
   return (
-    <div className="space-y-6">
-      {!hasWorkDashboard && !isServiceDeskView && <PageHeader title={isServiceCoordinatorView ? 'Dispatch today' : 'Dashboard'} />}
+    <div className="space-y-5">
+      <DashboardWelcome name={auth.access?.profile?.displayName} now={now} />
+      {!hasWorkDashboard && !isServiceDeskView && <PageHeader title={isServiceCoordinatorView ? 'Dispatch today' : 'Dashboard'} className="[&_h1]:sm:text-2xl" />}
       {hasWorkDashboard && RoleDashboard ? (
         <RoleDashboard scope={scope} canOpen={canOpen} hasPermission={hasPermission} />
       ) : isServiceCoordinatorView ? (
@@ -233,7 +271,7 @@ export default function DashboardPage() {
             <h2 id="dashboard-actions" className="font-display font-semibold">Quick actions</h2>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {actions.map((item) => (
-                <Link key={item.key} to={item.path} className="group flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm font-medium hover:border-emerald hover:text-emerald-600">
+                <Link key={item.key} to={item.path} className="group flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-base font-medium hover:border-emerald hover:text-emerald-600">
                   <item.icon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted" />
                   {item.label}
                   <ArrowUpRight aria-hidden="true" className="ml-auto h-4 w-4 shrink-0 text-muted group-hover:text-emerald" />

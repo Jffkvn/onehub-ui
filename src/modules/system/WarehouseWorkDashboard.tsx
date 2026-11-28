@@ -89,9 +89,9 @@ export function WarehouseWorkDashboard({ scope, canOpen, hasPermission }: WorkAc
     empty: 'No router pickups are awaiting confirmation.',
   })
 
-  return <WorkDashboard title="Warehouse today" description={dayLabel(today) + ' · Kampala'} queues={queues}
+  return <WorkDashboard title="Warehouse today" queues={queues}
     action={<div className="flex flex-wrap items-center gap-3">
-      {canFloat && <Link to="/inventory/router-float" className="text-sm font-medium text-emerald-600 hover:underline">Router Float</Link>}
+      {canFloat && <Link to="/inventory/router-float" className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-300">Router Float</Link>}
       {canOpen('receiving') && <Link className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700" to="/inventory/receiving">Receive stock</Link>}
     </div>}>
     <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">

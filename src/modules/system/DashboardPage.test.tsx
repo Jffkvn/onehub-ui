@@ -133,6 +133,26 @@ describe('Fixed Internet Dashboards & Activity Summary', () => {
     })
   })
 
+  it.each([
+    ['2026-11-28T08:59:00Z', 'morning', 'Saturday, 28 November 2026', '2026-11-28'],
+    ['2026-11-28T09:00:00Z', 'afternoon', 'Saturday, 28 November 2026', '2026-11-28'],
+    ['2026-11-28T15:00:00Z', 'evening', 'Saturday, 28 November 2026', '2026-11-28'],
+    ['2026-11-28T21:00:00Z', 'morning', 'Sunday, 29 November 2026', '2026-11-29'],
+  ])('greets the signed-in employee using Kampala time at %s', (instant, period, label, day) => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(new Date(instant))
+      mockUseAuth.mockReturnValue(makeAuth('employee', [], ' Olivia Pope '))
+      const { unmount } = renderDashboard()
+
+      expect(screen.getByText('Good ' + period + ', Olivia')).toBeInTheDocument()
+      expect(screen.getByText(label + ' · Kampala')).toHaveAttribute('datetime', day)
+      unmount()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('renders Service Desk cards strictly matching intake queues without calling monitor snapshot', () => {
     mockUseAuth.mockReturnValue(
       makeAuth('service_desk', ['service_requests.intake', 'service_requests.read', 'service_requests.report_provider']),
@@ -164,6 +184,7 @@ describe('Fixed Internet Dashboards & Activity Summary', () => {
 
     renderDashboard()
 
+    expect(screen.getByText(/^Good (morning|afternoon|evening), Demo$/)).toBeInTheDocument()
     expect(mockUseServiceMonitorSnapshot).toHaveBeenCalledWith(false)
     expect(screen.getByRole('link', { name: /Drafts to Submit.*2/i })).toHaveAttribute(
       'href',

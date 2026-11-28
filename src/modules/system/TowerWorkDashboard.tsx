@@ -97,8 +97,8 @@ export function TowerWorkDashboard({ scope, canOpen, hasPermission }: WorkAccess
     })),
     empty: 'You have no outstanding disbursed project cash.',
   })
-  return <WorkDashboard title="Construction today" description={dayLabel(today) + ' · Kampala'} queues={queues}
-    action={canOpen('projects') && <Link className="text-sm font-medium text-emerald-600 hover:underline" to="/ops/projects/tracker">Daily tracker</Link>}>
+  return <WorkDashboard title="Construction today" queues={queues}
+    action={canOpen('projects') && <Link className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-300" to="/ops/projects/tracker">Daily tracker</Link>}>
     <div className="grid items-start gap-4 xl:grid-cols-2">
       {queues.filter((queue) => queue.key === 'updates-due' || queue.key === 'cash-to-account').map((queue) =>
         <QueuePanel key={queue.key} queue={queue} limit={4} />)}
